@@ -1,10 +1,11 @@
 ﻿namespace BudgetFriend.API.Database.Entites;
 
-public sealed class User
-{
+public sealed class User {
     public Guid Id { get; set; }
 
     public string Email { get; set; } = string.Empty;
+
+    public string NormalizedEmail { get; set; } = string.Empty;
 
     public bool IsEmailVerified { get; set; }
 
