@@ -1,4 +1,6 @@
 using BudgetFriend.API.Database;
+using BudgetFriend.API.Features.Authentication.Register;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -6,8 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-{
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterValidator>();
+builder.Services.AddDbContext<AppDbContext>(options => {
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("Database"));
 });
