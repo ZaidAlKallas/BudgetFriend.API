@@ -62,5 +62,10 @@ if (app.Environment.IsDevelopment()) {
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapAuthenticationEndpoints();
+
 await app.RunAsync();
 
