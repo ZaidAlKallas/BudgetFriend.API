@@ -11,6 +11,7 @@ public static class AuthenticationEndpoints {
 
             group.MapRegisterEndpoint();
             group.MapLoginEndpoint();
+            group.MapProfileEndpoint();
 
             return app;
         }
