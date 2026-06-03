@@ -7,7 +7,7 @@ public static class AuthenticationEndpoints {
     extension(WebApplication app) {
         public WebApplication MapAuthenticationEndpoints() {
             var group = app.MapGroup("/api/auth")
-    .WithTags("Authentication");
+                .WithTags("Authentication");
 
             group.MapRegisterEndpoint();
             group.MapLoginEndpoint();

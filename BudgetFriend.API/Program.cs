@@ -53,6 +53,9 @@ builder.Services
     });
 builder.Services.AddAuthorization();
 
+builder.Services.AddHttpContextAccessor()
+    .AddScoped<ICurrentUser, CurrentUser>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment()) {
