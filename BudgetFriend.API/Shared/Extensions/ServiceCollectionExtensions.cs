@@ -1,0 +1,72 @@
+﻿using BudgetFriend.API.Database;
+using BudgetFriend.API.Features.Authentication.Jwt;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using System.Threading.RateLimiting;
+
+namespace BudgetFriend.API.Shared.Extensions;
+
+public static class ServiceCollectionExtensions {
+    public static IServiceCollection AddDatabase(
+        this IServiceCollection services,
+        ConfigurationManager configuration) {
+
+        services.AddDbContext<AppDbContext>(options => {
+            options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+            options.UseNpgsql(
+                configuration.GetConnectionString("Database"));
+        });
+
+        return services;
+    }
+
+    public static IServiceCollection AddAuthServices(
+        this IServiceCollection services,
+        ConfigurationManager configuration) {
+
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+
+        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options => {
+                var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+                    ?? throw new InvalidOperationException("Jwt configuration is missing.");
+
+                if (string.IsNullOrWhiteSpace(jwtOptions.SecretKey))
+                    throw new InvalidOperationException("Jwt:SecretKey is required.");
+
+                options.TokenValidationParameters =
+                    new TokenValidationParameters {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+
+                        ValidIssuer = jwtOptions.Issuer,
+                        ValidAudience = jwtOptions.Audience,
+
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(
+                                jwtOptions.SecretKey))
+                    };
+            });
+
+        services.AddAuthorization();
+        return services;
+    }
+
+    public static IServiceCollection AddLoginRateLimiting(this IServiceCollection services) {
+        services.AddRateLimiter(options => {
+            options.AddFixedWindowLimiter("LoginPolicy", opt => {
+                opt.PermitLimit = 5;
+                opt.Window = TimeSpan.FromMinutes(1);
+                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                opt.QueueLimit = 0;
+            });
+        });
+        return services;
+    }
+}

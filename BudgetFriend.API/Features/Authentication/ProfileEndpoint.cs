@@ -6,7 +6,7 @@ namespace BudgetFriend.API.Features.Authentication;
 
 public static class ProfileEndpoint {
     public static void MapProfileEndpoint(this RouteGroupBuilder group) =>
-        group.MapGet("/api/profile", async (
+        group.MapGet("/profile", async (
             ClaimsPrincipal principal,
             AppDbContext dbContext,
             CancellationToken cancellationToken) => {
@@ -15,7 +15,6 @@ public static class ProfileEndpoint {
                         ClaimTypes.NameIdentifier)!);
 
                 var user = await dbContext.Users
-                    .AsNoTracking()
                     .Where(x => x.Id == userId)
                     .Select(x => new ProfileResponse(
                         x.Id,
@@ -28,7 +27,11 @@ public static class ProfileEndpoint {
 
                 return Results.Ok(user);
             })
-        .RequireAuthorization();
+        .RequireAuthorization()
+        .WithSummary("Get User Profile")
+        .WithDescription("Retrieves the profile information for the authenticated user")
+        .Produces<ProfileResponse>(StatusCodes.Status200OK)
+        .ProducesProblem(StatusCodes.Status401Unauthorized);
 }
 
 public sealed record ProfileResponse(
