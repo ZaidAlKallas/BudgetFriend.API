@@ -17,6 +17,7 @@ public static partial class RegisterEndpoint {
         .WithName("Register")
         .WithSummary("Register a new user")
         .WithDescription("Creates a new account using email and password")
+        .Produces(StatusCodes.Status201Created)
         .ProducesProblem(StatusCodes.Status409Conflict);
 
     private static async Task<IResult> HandleAsync(

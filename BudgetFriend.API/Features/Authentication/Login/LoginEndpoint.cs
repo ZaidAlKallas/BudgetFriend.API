@@ -20,6 +20,8 @@ public static class LoginEndpoint {
         .WithName("Login")
         .WithSummary("Login to the application")
         .WithDescription("Authenticates a user and returns a JWT token")
+        .ProducesProblem(StatusCodes.Status429TooManyRequests)
+        .ProducesProblem(StatusCodes.Status401Unauthorized)
         .Produces<LoginResponse>(StatusCodes.Status200OK);
 
     private static async Task<IResult> HandleAsync(
