@@ -10,8 +10,7 @@ using System.Threading.RateLimiting;
 namespace BudgetFriend.API.Shared.Extensions;
 
 public static class ServiceCollectionExtensions {
-    public static IServiceCollection AddDatabase(
-        this IServiceCollection services,
+    public static IServiceCollection AddDatabase(this IServiceCollection services,
         ConfigurationManager configuration) {
 
         services.AddDbContext<AppDbContext>(options => {
@@ -23,8 +22,7 @@ public static class ServiceCollectionExtensions {
         return services;
     }
 
-    public static IServiceCollection AddAuthServices(
-        this IServiceCollection services,
+    public static IServiceCollection AddAuthServices(this IServiceCollection services,
         ConfigurationManager configuration) {
 
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
@@ -60,6 +58,14 @@ public static class ServiceCollectionExtensions {
 
     public static IServiceCollection AddLoginRateLimiting(this IServiceCollection services) {
         services.AddRateLimiter(options => {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.OnRejected = async (context, cancellationToken) => {
+                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                await context.HttpContext.Response.WriteAsJsonAsync(new {
+                    error = "Too many requests. Please try again later."
+                }, cancellationToken);
+            };
+
             options.AddFixedWindowLimiter("LoginPolicy", opt => {
                 opt.PermitLimit = 5;
                 opt.Window = TimeSpan.FromMinutes(1);

@@ -1,20 +1,25 @@
-﻿using Microsoft.AspNetCore.RateLimiting;
+﻿using Scalar.AspNetCore;
 
 namespace BudgetFriend.API.Shared.Extensions;
 
 public static class WebApplicationExtensions {
-    public static WebApplication ConfigureRateLimiter(this WebApplication app) {
+    public static WebApplication ConfigurePipline(this WebApplication app) {
 
-        app.UseRateLimiter(new RateLimiterOptions() {
-            OnRejected = async (context, cancellationToken) => {
-                context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                await context.HttpContext.Response.WriteAsJsonAsync(new {
-                    error = "Too many requests. Please try again later."
-                }, cancellationToken);
-            },
-            RejectionStatusCode = StatusCodes.Status429TooManyRequests
-        });
+        if (app.Environment.IsDevelopment()) {
+            app.MapOpenApi();
+            app.MapScalarApiReference(option => {
+                option.PersistentAuthentication = true;
+                option.AddAuthorizationCodeFlow("Bearer", config => {
+                    config.Token = "Bearer {token}";
+                    config.TokenName = "Authorization";
+                });
+            });
+        }
 
+        app.UseHttpsRedirection();
+        app.UseRateLimiter();
+        app.UseAuthentication();
+        app.UseAuthorization();
         return app;
     }
 }
