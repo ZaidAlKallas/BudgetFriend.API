@@ -1,4 +1,5 @@
 using BudgetFriend.API.Database.Entites;
+using BudgetFriend.API.Features.Accounts;
 using BudgetFriend.API.Features.Authentication;
 using BudgetFriend.API.Features.Authentication.Register;
 using BudgetFriend.API.Shared.Extensions;
@@ -26,6 +27,7 @@ var app = builder.Build();
 app.ConfigurePipline();
 
 app.MapAuthenticationEndpoints();
+app.MapAccountEndpoints();
 
 await app.RunAsync();
 
