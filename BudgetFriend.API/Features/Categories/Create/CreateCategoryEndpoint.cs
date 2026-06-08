@@ -21,6 +21,7 @@ public static class CreateCategoryEndpoint
         CreateCategoryRequest request,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
         var exists = await dbContext.Categories
@@ -43,6 +44,7 @@ public static class CreateCategoryEndpoint
         dbContext.Categories.Add(category);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        logger.LogInformation("Category {CategoryId} created for user {UserId}", category.Id, currentUser.UserId);
         return Results.Created(
             $"/api/categories/{category.Id}",
             new CreateCategoryResponse(category.Id, category.Name, category.TransactionType));

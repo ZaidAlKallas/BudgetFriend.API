@@ -30,6 +30,7 @@ public static class LoginEndpoint {
         IPasswordHasher<User> passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
         IOptions<JwtOptions> jwtOptions,
+        ILogger<Program> logger,
         CancellationToken cancellationToken) {
 
         var normalizedEmail = request.Email.Trim().ToUpperInvariant();
@@ -39,14 +40,22 @@ public static class LoginEndpoint {
             cancellationToken);
 
         if (user is null)
+        {
+            logger.LogWarning("Failed login attempt for {Email}: user not found", request.Email);
             return Results.Unauthorized();
+        }
 
         if (passwordHasher.VerifyHashedPassword(user, user.PasswordHash!, request.Password) == PasswordVerificationResult.Failed)
+        {
+            logger.LogWarning("Failed login attempt for {Email}: invalid password", request.Email);
             return Results.Unauthorized();
+        }
 
         var accessToken = jwtTokenGenerator.Generate(user);
 
         var expiresAtUtc = DateTime.UtcNow.AddMinutes(jwtOptions.Value.ExpirationMinutes);
+
+        logger.LogInformation("User {UserId} logged in successfully", user.Id);
         return Results.Ok(new LoginResponse(accessToken, expiresAtUtc));
     }
 }

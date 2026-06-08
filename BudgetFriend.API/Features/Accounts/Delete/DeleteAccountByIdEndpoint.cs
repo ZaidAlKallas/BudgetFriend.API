@@ -17,10 +17,16 @@ public static class DeleteAccountByIdEndpoint {
         Guid accountId,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ILogger<Program> logger,
         CancellationToken cancellationToken) {
         var deletedRows = await dbContext.Accounts
             .Where(a => a.UserId == currentUser.UserId && a.Id == accountId)
             .ExecuteDeleteAsync(cancellationToken);
-        return deletedRows == 0 ? Results.NotFound() : Results.NoContent();
+
+        if (deletedRows == 0)
+            return Results.NotFound();
+
+        logger.LogInformation("Account {AccountId} deleted by user {UserId}", accountId, currentUser.UserId);
+        return Results.NoContent();
     }
 }

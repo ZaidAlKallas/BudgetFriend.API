@@ -6,8 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Transactions.Create;
 
-public static class CreateTransactionEndpoint
-{
+public static class CreateTransactionEndpoint {
     public static void MapCreateTransaction(this IEndpointRouteBuilder app) =>
         app.MapPost("/", HandleAsync)
             .WithValidation<CreateTransactionRequest>()
@@ -21,8 +20,8 @@ public static class CreateTransactionEndpoint
         CreateTransactionRequest request,
         AppDbContext dbContext,
         ICurrentUser currentUser,
-        CancellationToken cancellationToken)
-    {
+        ILogger<Program> logger,
+        CancellationToken cancellationToken) {
         var accountExists = await dbContext.Accounts
             .AnyAsync(a => a.Id == request.AccountId && a.UserId == currentUser.UserId,
                 cancellationToken);
@@ -37,8 +36,7 @@ public static class CreateTransactionEndpoint
         if (!categoryExists)
             return Results.NotFound(new { message = "Category not found." });
 
-        var transaction = new Transaction
-        {
+        var transaction = new Transaction {
             Id = Guid.NewGuid(),
             AccountId = request.AccountId,
             CategoryId = request.CategoryId,
@@ -49,6 +47,10 @@ public static class CreateTransactionEndpoint
 
         dbContext.Transactions.Add(transaction);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Transaction {TransactionId} created for account {AccountId} by user {UserId}",
+            transaction.Id, transaction.AccountId, currentUser.UserId);
 
         return Results.Created(
             $"/api/transactions/{transaction.Id}",

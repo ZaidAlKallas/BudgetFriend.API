@@ -18,12 +18,17 @@ public static class DeleteTransactionByIdEndpoint
         Guid transactionId,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
         var deletedRows = await dbContext.Transactions
             .Where(t => t.Account.UserId == currentUser.UserId && t.Id == transactionId)
             .ExecuteDeleteAsync(cancellationToken);
 
-        return deletedRows == 0 ? Results.NotFound() : Results.NoContent();
+        if (deletedRows == 0)
+            return Results.NotFound();
+
+        logger.LogInformation("Transaction {TransactionId} deleted by user {UserId}", transactionId, currentUser.UserId);
+        return Results.NoContent();
     }
 }

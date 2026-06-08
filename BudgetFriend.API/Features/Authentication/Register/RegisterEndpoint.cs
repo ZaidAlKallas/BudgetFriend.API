@@ -24,7 +24,10 @@ public static partial class RegisterEndpoint {
         RegisterRequest request,
         AppDbContext dbContext,
         IPasswordHasher<User> passwordHasher,
+        ILogger<Program> logger,
         CancellationToken cancellationToken) {
+
+        logger.LogInformation("Registering new user with email {Email}", request.Email);
 
         // Check existing user
         var email = request.Email.Trim();

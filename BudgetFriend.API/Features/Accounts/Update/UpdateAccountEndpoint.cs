@@ -22,6 +22,7 @@ public static class UpdateAccountEndpoint {
         UpdateAccountRequest request,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ILogger<Program> logger,
         CancellationToken cancellationToken) {
         var exists = await dbContext.Accounts
                 .AnyAsync(a => a.Name == request.Name && a.UserId == currentUser.UserId && a.Id != accountId, cancellationToken);
@@ -35,8 +36,11 @@ public static class UpdateAccountEndpoint {
                 .SetProperty(a => a.Name, request.Name)
                 .SetProperty(a => a.InitialBalance, request.InitialBalance),
                 cancellationToken);
-        return totalUpdated == 0 ? Results.NotFound()
-            : Results.Ok(new UpdateAccountResponse(
+        if (totalUpdated == 0)
+            return Results.NotFound();
+
+        logger.LogInformation("Account {AccountId} updated by user {UserId}", accountId, currentUser.UserId);
+        return Results.Ok(new UpdateAccountResponse(
                 accountId,
                 request.Name,
                 request.InitialBalance

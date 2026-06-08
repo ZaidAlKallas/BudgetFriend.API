@@ -18,12 +18,17 @@ public static class DeleteCategoryByIdEndpoint
         Guid categoryId,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
         var deletedRows = await dbContext.Categories
             .Where(c => c.UserId == currentUser.UserId && c.Id == categoryId)
             .ExecuteDeleteAsync(cancellationToken);
 
-        return deletedRows == 0 ? Results.NotFound() : Results.NoContent();
+        if (deletedRows == 0)
+            return Results.NotFound();
+
+        logger.LogInformation("Category {CategoryId} deleted by user {UserId}", categoryId, currentUser.UserId);
+        return Results.NoContent();
     }
 }

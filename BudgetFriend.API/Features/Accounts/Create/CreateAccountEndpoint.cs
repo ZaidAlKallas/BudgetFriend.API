@@ -20,6 +20,7 @@ public static class CreateAccountEndpoint {
         CreateAccountRequest request,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ILogger<Program> logger,
         CancellationToken cancellationToken) {
         var account = new Account {
             Id = Guid.NewGuid(),
@@ -29,7 +30,7 @@ public static class CreateAccountEndpoint {
         };
 
         var exists = await dbContext.Accounts
-                .AnyAsync(a => a.Name == request.Name && a.UserId == currentUser.UserId, cancellationToken);
+                .AnyAsync(a => a.UserId == currentUser.UserId && a.Name == request.Name, cancellationToken);
 
         if (exists)
             return Results.Conflict($"A account with this name already exists.");
@@ -37,6 +38,8 @@ public static class CreateAccountEndpoint {
         await dbContext.Accounts.AddAsync(account, cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Account {AccountId} created for user {UserId}", account.Id, currentUser.UserId);
 
         return Results.Created(
             $"/api/accounts/{account.Id}",

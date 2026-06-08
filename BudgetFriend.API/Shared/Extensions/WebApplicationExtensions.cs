@@ -1,4 +1,6 @@
 ﻿using Scalar.AspNetCore;
+using Serilog.Context;
+using System.Security.Claims;
 
 namespace BudgetFriend.API.Shared.Extensions;
 
@@ -20,6 +22,15 @@ public static class WebApplicationExtensions {
         app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
+
+        app.Use(async (context, next) => {
+            var userId = context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId is not null)
+                LogContext.PushProperty("UserId", userId);
+
+            await next();
+        });
+
         return app;
     }
 }
