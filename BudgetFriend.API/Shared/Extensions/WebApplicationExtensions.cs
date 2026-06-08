@@ -1,17 +1,22 @@
-﻿using Scalar.AspNetCore;
+using Scalar.AspNetCore;
 using Serilog.Context;
 using System.Security.Claims;
 
 namespace BudgetFriend.API.Shared.Extensions;
 
-public static class WebApplicationExtensions {
-    public static WebApplication ConfigurePipline(this WebApplication app) {
+public static class WebApplicationExtensions
+{
+    public static WebApplication ConfigurePipline(this WebApplication app)
+    {
 
-        if (app.Environment.IsDevelopment()) {
+        if (app.Environment.IsDevelopment())
+        {
             app.MapOpenApi();
-            app.MapScalarApiReference(option => {
+            app.MapScalarApiReference(option =>
+            {
                 option.PersistentAuthentication = true;
-                option.AddAuthorizationCodeFlow("Bearer", config => {
+                option.AddAuthorizationCodeFlow("Bearer", config =>
+                {
                     config.Token = "Bearer {token}";
                     config.TokenName = "Authorization";
                 });
@@ -23,7 +28,8 @@ public static class WebApplicationExtensions {
         app.UseAuthentication();
         app.UseAuthorization();
 
-        app.Use(async (context, next) => {
+        app.Use(async (context, next) =>
+        {
             var userId = context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId is not null)
                 LogContext.PushProperty("UserId", userId);

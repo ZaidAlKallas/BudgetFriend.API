@@ -1,4 +1,4 @@
-﻿namespace BudgetFriend.API.Database.Entites;
+namespace BudgetFriend.API.Database.Entites;
 
 public sealed class Transaction
 {

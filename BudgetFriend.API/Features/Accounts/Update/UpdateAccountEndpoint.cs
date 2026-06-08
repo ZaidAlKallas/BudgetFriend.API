@@ -1,4 +1,4 @@
-﻿using BudgetFriend.API.Database;
+using BudgetFriend.API.Database;
 using BudgetFriend.API.Features.Authentication;
 using BudgetFriend.API.Shared.Validation;
 using FluentValidation;
@@ -6,7 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Accounts.Update;
 
-public static class UpdateAccountEndpoint {
+public static class UpdateAccountEndpoint
+{
     public static void MapUpdateAccount(this IEndpointRouteBuilder app) =>
         app.MapPut("/{accountId}", HandleAsync)
             .WithValidation<UpdateAccountRequest>()
@@ -23,7 +24,8 @@ public static class UpdateAccountEndpoint {
         AppDbContext dbContext,
         ICurrentUser currentUser,
         ILogger<Program> logger,
-        CancellationToken cancellationToken) {
+        CancellationToken cancellationToken)
+    {
         var exists = await dbContext.Accounts
                 .AnyAsync(a => a.Name == request.Name && a.UserId == currentUser.UserId && a.Id != accountId, cancellationToken);
 

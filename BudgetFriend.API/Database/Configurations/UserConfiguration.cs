@@ -1,11 +1,13 @@
-﻿using BudgetFriend.API.Database.Entites;
+using BudgetFriend.API.Database.Entites;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BudgetFriend.Api.Database.Configurations;
 
-public sealed class UserConfiguration : IEntityTypeConfiguration<User> {
-    public void Configure(EntityTypeBuilder<User> builder) {
+public sealed class UserConfiguration : IEntityTypeConfiguration<User>
+{
+    public void Configure(EntityTypeBuilder<User> builder)
+    {
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Email)

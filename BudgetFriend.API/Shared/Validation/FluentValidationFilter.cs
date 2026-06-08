@@ -3,17 +3,21 @@ using FluentValidation;
 namespace BudgetFriend.API.Shared.Validation;
 
 public sealed class FluentValidationFilter<TRequest>(IValidator<TRequest> validator)
-    : IEndpointFilter {
+    : IEndpointFilter
+{
     public async ValueTask<object?> InvokeAsync(
         EndpointFilterInvocationContext context,
-        EndpointFilterDelegate next) {
+        EndpointFilterDelegate next)
+    {
         var request = context.Arguments.OfType<TRequest>().FirstOrDefault();
-        if (request is null) {
+        if (request is null)
+        {
             return await next(context);
         }
 
         var validationResult = await validator.ValidateAsync(request, context.HttpContext.RequestAborted);
-        if (validationResult.IsValid) {
+        if (validationResult.IsValid)
+        {
             return await next(context);
         }
 

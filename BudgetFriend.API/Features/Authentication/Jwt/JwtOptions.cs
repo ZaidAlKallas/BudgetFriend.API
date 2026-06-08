@@ -1,6 +1,7 @@
-﻿namespace BudgetFriend.API.Features.Authentication.Jwt;
+namespace BudgetFriend.API.Features.Authentication.Jwt;
 
-public sealed class JwtOptions {
+public sealed class JwtOptions
+{
     public const string SectionName = "Jwt";
 
     public string Issuer { get; init; } = string.Empty;

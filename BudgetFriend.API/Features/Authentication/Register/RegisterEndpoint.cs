@@ -6,7 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Authentication.Register;
 
-public static partial class RegisterEndpoint {
+public static partial class RegisterEndpoint
+{
     /// <summary>
     /// Maps the user registration endpoint.
     /// </summary>
@@ -25,7 +26,8 @@ public static partial class RegisterEndpoint {
         AppDbContext dbContext,
         IPasswordHasher<User> passwordHasher,
         ILogger<Program> logger,
-        CancellationToken cancellationToken) {
+        CancellationToken cancellationToken)
+    {
 
         logger.LogInformation("Registering new user with email {Email}", request.Email);
 
@@ -36,11 +38,13 @@ public static partial class RegisterEndpoint {
         var exists = await dbContext.Users
             .AnyAsync(u => u.NormalizedEmail == normalizedEmail, cancellationToken);
 
-        if (exists) {
+        if (exists)
+        {
             return Results.Conflict(new { message = "A user with this email already exists." });
         }
 
-        var user = new User {
+        var user = new User
+        {
             Id = Guid.NewGuid(),
             Email = email,
             NormalizedEmail = normalizedEmail,

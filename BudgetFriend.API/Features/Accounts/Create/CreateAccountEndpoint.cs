@@ -1,4 +1,4 @@
-﻿using BudgetFriend.API.Database;
+using BudgetFriend.API.Database;
 using BudgetFriend.API.Database.Entites;
 using BudgetFriend.API.Features.Authentication;
 using BudgetFriend.API.Shared.Validation;
@@ -6,7 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Accounts.Create;
 
-public static class CreateAccountEndpoint {
+public static class CreateAccountEndpoint
+{
     public static void MapCreateAccount(this IEndpointRouteBuilder app) =>
         app.MapPost("/", HandleAsync)
             .WithValidation<CreateAccountRequest>()
@@ -21,8 +22,10 @@ public static class CreateAccountEndpoint {
         AppDbContext dbContext,
         ICurrentUser currentUser,
         ILogger<Program> logger,
-        CancellationToken cancellationToken) {
-        var account = new Account {
+        CancellationToken cancellationToken)
+    {
+        var account = new Account
+        {
             Id = Guid.NewGuid(),
             UserId = currentUser.UserId,
             Name = request.Name.Trim(),

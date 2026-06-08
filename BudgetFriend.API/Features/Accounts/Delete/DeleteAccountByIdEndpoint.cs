@@ -1,10 +1,11 @@
-﻿using BudgetFriend.API.Database;
+using BudgetFriend.API.Database;
 using BudgetFriend.API.Features.Authentication;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Accounts.Delete;
 
-public static class DeleteAccountByIdEndpoint {
+public static class DeleteAccountByIdEndpoint
+{
     public static void MapDeleteAccount(this IEndpointRouteBuilder app) =>
         app.MapDelete("/{accountId}", HandleAsync)
             .WithName("Delete Account by Id")
@@ -18,7 +19,8 @@ public static class DeleteAccountByIdEndpoint {
         AppDbContext dbContext,
         ICurrentUser currentUser,
         ILogger<Program> logger,
-        CancellationToken cancellationToken) {
+        CancellationToken cancellationToken)
+    {
         var deletedRows = await dbContext.Accounts
             .Where(a => a.UserId == currentUser.UserId && a.Id == accountId)
             .ExecuteDeleteAsync(cancellationToken);

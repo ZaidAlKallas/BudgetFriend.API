@@ -1,4 +1,4 @@
-﻿using BudgetFriend.API.Database;
+using BudgetFriend.API.Database;
 using BudgetFriend.API.Database.Entites;
 using BudgetFriend.API.Features.Authentication.Jwt;
 using BudgetFriend.API.Shared.Validation;
@@ -8,7 +8,8 @@ using Microsoft.Extensions.Options;
 
 namespace BudgetFriend.API.Features.Authentication.Login;
 
-public static class LoginEndpoint {
+public static class LoginEndpoint
+{
     /// <summary>
     /// Maps the user login endpoint.
     /// </summary>
@@ -31,7 +32,8 @@ public static class LoginEndpoint {
         IJwtTokenGenerator jwtTokenGenerator,
         IOptions<JwtOptions> jwtOptions,
         ILogger<Program> logger,
-        CancellationToken cancellationToken) {
+        CancellationToken cancellationToken)
+    {
 
         var normalizedEmail = request.Email.Trim().ToUpperInvariant();
 

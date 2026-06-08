@@ -1,9 +1,10 @@
-﻿using BudgetFriend.API.Database;
+using BudgetFriend.API.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Authentication;
 
-public static class ProfileEndpoint {
+public static class ProfileEndpoint
+{
     public static void MapProfileEndpoint(this RouteGroupBuilder group) =>
         group.MapGet("/profile", HandlerAsync)
         .RequireAuthorization()
@@ -16,7 +17,8 @@ public static class ProfileEndpoint {
     private static async Task<IResult> HandlerAsync(
         ICurrentUser currentUser,
         AppDbContext dbContext,
-        CancellationToken cancellationToken) {
+        CancellationToken cancellationToken)
+    {
 
         var userId = currentUser.UserId;
 

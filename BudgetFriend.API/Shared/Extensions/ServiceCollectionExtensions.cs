@@ -1,4 +1,4 @@
-﻿using BudgetFriend.API.Database;
+using BudgetFriend.API.Database;
 using BudgetFriend.API.Features.Authentication.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
@@ -9,11 +9,14 @@ using System.Threading.RateLimiting;
 
 namespace BudgetFriend.API.Shared.Extensions;
 
-public static class ServiceCollectionExtensions {
+public static class ServiceCollectionExtensions
+{
     public static IServiceCollection AddDatabase(this IServiceCollection services,
-        ConfigurationManager configuration) {
+        ConfigurationManager configuration)
+    {
 
-        services.AddDbContext<AppDbContext>(options => {
+        services.AddDbContext<AppDbContext>(options =>
+        {
             options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             options.UseNpgsql(
                 configuration.GetConnectionString("Database"));
@@ -23,13 +26,15 @@ public static class ServiceCollectionExtensions {
     }
 
     public static IServiceCollection AddAuthServices(this IServiceCollection services,
-        ConfigurationManager configuration) {
+        ConfigurationManager configuration)
+    {
 
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
 
         services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options => {
+            .AddJwtBearer(options =>
+            {
                 var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
                     ?? throw new InvalidOperationException("Jwt configuration is missing.");
 
@@ -37,7 +42,8 @@ public static class ServiceCollectionExtensions {
                     throw new InvalidOperationException("Jwt:SecretKey is required.");
 
                 options.TokenValidationParameters =
-                    new TokenValidationParameters {
+                    new TokenValidationParameters
+                    {
                         ValidateIssuer = true,
                         ValidateAudience = true,
                         ValidateLifetime = true,
@@ -56,17 +62,22 @@ public static class ServiceCollectionExtensions {
         return services;
     }
 
-    public static IServiceCollection AddLoginRateLimiting(this IServiceCollection services) {
-        services.AddRateLimiter(options => {
+    public static IServiceCollection AddLoginRateLimiting(this IServiceCollection services)
+    {
+        services.AddRateLimiter(options =>
+        {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-            options.OnRejected = async (context, cancellationToken) => {
+            options.OnRejected = async (context, cancellationToken) =>
+            {
                 context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                await context.HttpContext.Response.WriteAsJsonAsync(new {
+                await context.HttpContext.Response.WriteAsJsonAsync(new
+                {
                     error = "Too many requests. Please try again later."
                 }, cancellationToken);
             };
 
-            options.AddFixedWindowLimiter("LoginPolicy", opt => {
+            options.AddFixedWindowLimiter("LoginPolicy", opt =>
+            {
                 opt.PermitLimit = 5;
                 opt.Window = TimeSpan.FromMinutes(1);
                 opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;

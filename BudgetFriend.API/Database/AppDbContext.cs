@@ -1,4 +1,4 @@
-﻿using BudgetFriend.API.Database.Entites;
+using BudgetFriend.API.Database.Entites;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Database;

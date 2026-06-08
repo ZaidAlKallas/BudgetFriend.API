@@ -1,5 +1,6 @@
-﻿namespace BudgetFriend.API.Features.Authentication;
+namespace BudgetFriend.API.Features.Authentication;
 
-public interface ICurrentUser {
+public interface ICurrentUser
+{
     Guid UserId { get; }
 }

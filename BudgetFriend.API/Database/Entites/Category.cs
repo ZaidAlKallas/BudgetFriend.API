@@ -1,4 +1,4 @@
-﻿using BudgetFriend.API.Database.Enums;
+using BudgetFriend.API.Database.Enums;
 
 namespace BudgetFriend.API.Database.Entites;
 

@@ -1,4 +1,4 @@
-﻿using BudgetFriend.API.Database.Entites;
+using BudgetFriend.API.Database.Entites;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -7,14 +7,17 @@ using System.Text;
 
 namespace BudgetFriend.API.Features.Authentication.Jwt;
 
-public sealed class JwtTokenGenerator : IJwtTokenGenerator {
+public sealed class JwtTokenGenerator : IJwtTokenGenerator
+{
     private readonly JwtOptions _options;
 
-    public JwtTokenGenerator(IOptions<JwtOptions> options) {
+    public JwtTokenGenerator(IOptions<JwtOptions> options)
+    {
         _options = options.Value;
     }
 
-    public string Generate(User user) {
+    public string Generate(User user)
+    {
         var claims = new[]
         {
             new Claim(

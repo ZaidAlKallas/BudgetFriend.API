@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Categories.GetById;
 
-public static class GetCategoryByIdEndpoint {
+public static class GetCategoryByIdEndpoint
+{
     public static void MapGetCategoryById(this IEndpointRouteBuilder app) =>
         app.MapGet("/{categoryId}", HandleAsync)
             .WithName("Get Category by Id")
@@ -17,7 +18,8 @@ public static class GetCategoryByIdEndpoint {
         Guid categoryId,
         AppDbContext dbContext,
         ICurrentUser currentUser,
-        CancellationToken cancellationToken) {
+        CancellationToken cancellationToken)
+    {
         var category = await dbContext.Categories
             .Where(c => c.UserId == currentUser.UserId && c.Id == categoryId)
             .Select(c => new GetCategoryResponse(c.Id, c.Name, c.TransactionType))

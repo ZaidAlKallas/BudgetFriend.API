@@ -1,4 +1,4 @@
-﻿namespace BudgetFriend.API.Features.Accounts;
+namespace BudgetFriend.API.Features.Accounts;
 
 public sealed record GetAccountResponse(
     Guid Id,

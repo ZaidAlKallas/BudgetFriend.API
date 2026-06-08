@@ -1,10 +1,11 @@
-﻿using BudgetFriend.API.Database;
+using BudgetFriend.API.Database;
 using BudgetFriend.API.Features.Authentication;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Accounts.GetAll;
 
-public static class GetAllAccountsEndpoint {
+public static class GetAllAccountsEndpoint
+{
     public static void MapGetAllAccounts(this IEndpointRouteBuilder app) =>
         app.MapGet("/", HandleAsync)
             .WithName("Get Accounts")
@@ -15,7 +16,8 @@ public static class GetAllAccountsEndpoint {
     public static async Task<IResult> HandleAsync(
         AppDbContext dbContext,
         ICurrentUser currentUser,
-        CancellationToken cancellationToken) {
+        CancellationToken cancellationToken)
+    {
         var accounts = await dbContext.Accounts
             .Where(a => a.UserId == currentUser.UserId)
             .OrderBy(a => a.Name)

@@ -1,4 +1,4 @@
-﻿namespace BudgetFriend.API.Features.Authentication.Register;
+namespace BudgetFriend.API.Features.Authentication.Register;
 
 public sealed record RegisterRequest(
     string Email,
