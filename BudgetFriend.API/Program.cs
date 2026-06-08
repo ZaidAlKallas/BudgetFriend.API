@@ -3,6 +3,7 @@ using BudgetFriend.API.Features.Accounts;
 using BudgetFriend.API.Features.Authentication;
 using BudgetFriend.API.Features.Authentication.Register;
 using BudgetFriend.API.Features.Categories;
+using BudgetFriend.API.Features.Transactions;
 using BudgetFriend.API.Shared.Extensions;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
@@ -30,6 +31,7 @@ app.ConfigurePipline();
 app.MapAuthenticationEndpoints();
 app.MapAccountEndpoints();
 app.MapCategoryEndpoints();
+app.MapTransactionEndpoints();
 
 await app.RunAsync();
 
