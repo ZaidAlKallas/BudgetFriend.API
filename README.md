@@ -20,6 +20,7 @@ A modern Personal Finance API built with:
 - Vertical Slices
 - FluentValidation
 - Serilog
+- Global Error Handling
 
 ### v0.2.0
 - Docker

@@ -39,6 +39,8 @@ builder.Services.AddLoginRateLimiting();
 builder.Services.AddHttpContextAccessor()
     .AddScoped<ICurrentUser, CurrentUser>();
 
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
 app.ConfigurePipline();

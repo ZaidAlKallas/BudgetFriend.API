@@ -13,7 +13,7 @@ public static partial class RegisterEndpoint
     /// </summary>
     /// <param name="app">The application to map the endpoint on.</param>
     public static void MapRegisterEndpoint(this IEndpointRouteBuilder app) =>
-        app.MapPost("/api/auth/register", HandleAsync)
+        app.MapPost("/register", HandleAsync)
         .WithValidation<RegisterRequest>()
         .WithName("Register")
         .WithSummary("Register a new user")
