@@ -20,4 +20,8 @@
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="BudgetFriend.API.UnitTests" />
+  </ItemGroup>
+
 </Project>

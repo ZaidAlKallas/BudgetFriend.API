@@ -2,5 +2,7 @@
   <Folder Name="/src/">
     <Project Path="BudgetFriend.API/BudgetFriend.API.csproj" />
   </Folder>
-  <Folder Name="/test/" />
+  <Folder Name="/test/">
+    <Project Path="test/BudgetFriend.API.UnitTests/BudgetFriend.API.UnitTests.csproj" />
+  </Folder>
 </Solution>
