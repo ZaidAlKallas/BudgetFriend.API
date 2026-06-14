@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="BudgetFriend.API.UnitTests" />
+    <InternalsVisibleTo Include="BudgetFriend.API.IntegrationTests" />
   </ItemGroup>
 
 </Project>
