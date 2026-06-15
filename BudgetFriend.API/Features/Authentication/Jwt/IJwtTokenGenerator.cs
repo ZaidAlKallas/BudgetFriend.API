@@ -4,5 +4,6 @@ namespace BudgetFriend.API.Features.Authentication.Jwt;
 
 public interface IJwtTokenGenerator
 {
-    string Generate(User user);
+    (string Token, string JwtId) Generate(User user);
+    string GetJwtId(string token);
 }

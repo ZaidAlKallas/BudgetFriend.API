@@ -16,8 +16,10 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
         _options = options.Value;
     }
 
-    public string Generate(User user)
+    public (string Token, string JwtId) Generate(User user)
     {
+        var jwtId = Guid.NewGuid().ToString();
+
         var claims = new[]
         {
             new Claim(
@@ -26,7 +28,11 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
 
             new Claim(
                 JwtRegisteredClaimNames.Email,
-                user.Email)
+                user.Email),
+
+            new Claim(
+                JwtRegisteredClaimNames.Jti,
+                jwtId)
         };
 
         var key = new SymmetricSecurityKey(
@@ -44,7 +50,14 @@ public sealed class JwtTokenGenerator : IJwtTokenGenerator
                 _options.ExpirationMinutes),
             signingCredentials: credentials);
 
-        return new JwtSecurityTokenHandler()
-            .WriteToken(token);
+        return (new JwtSecurityTokenHandler()
+            .WriteToken(token), jwtId);
+    }
+
+    public string GetJwtId(string token)
+    {
+        var handler = new JwtSecurityTokenHandler();
+        var jwtToken = handler.ReadJwtToken(token);
+        return jwtToken.Id;
     }
 }

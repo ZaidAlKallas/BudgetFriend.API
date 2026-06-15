@@ -1,6 +1,7 @@
 using BudgetFriend.API.Database;
 using BudgetFriend.API.Database.Entites;
 using BudgetFriend.API.Features.Authentication.Jwt;
+using BudgetFriend.API.Features.Authentication.RefreshToken;
 using BudgetFriend.API.Shared.Validation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,7 @@ public static class LoginEndpoint
         AppDbContext dbContext,
         IPasswordHasher<User> passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
+        IRefreshTokenService refreshTokenService,
         IOptions<JwtOptions> jwtOptions,
         ILogger<Program> logger,
         CancellationToken cancellationToken)
@@ -53,11 +55,10 @@ public static class LoginEndpoint
             return Results.Unauthorized();
         }
 
-        var accessToken = jwtTokenGenerator.Generate(user);
-
-        var expiresAtUtc = DateTime.UtcNow.AddMinutes(jwtOptions.Value.ExpirationMinutes);
+        var (accessToken, jwtId) = jwtTokenGenerator.Generate(user);
+        var (refreshToken, expiresAtUtc) = await refreshTokenService.GenerateAsync(user, jwtId, cancellationToken);
 
         logger.LogInformation("User {UserId} logged in successfully", user.Id);
-        return Results.Ok(new LoginResponse(accessToken, expiresAtUtc));
+        return Results.Ok(new LoginResponse(accessToken, refreshToken, expiresAtUtc));
     }
 }
