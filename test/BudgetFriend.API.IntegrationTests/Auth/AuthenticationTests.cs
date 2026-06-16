@@ -67,6 +67,7 @@ public sealed class AuthenticationTests(BudgetFriendApiFactory factory)
         var content = await response.Content.ReadFromJsonAsync<LoginResponse>();
         content.Should().NotBeNull();
         content!.AccessToken.Should().NotBeNullOrWhiteSpace();
+        content.RefreshToken.Should().NotBeNullOrWhiteSpace();
         content.ExpireAtUtc.Should().BeAfter(DateTime.UtcNow);
     }
 

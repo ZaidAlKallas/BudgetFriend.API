@@ -4,10 +4,12 @@ public static class ApiRoutes
 {
     public static class Auth
     {
-        private const string Prefix = "/api/auth";
-        public const string Register = "/api/auth/register";
-        public const string Login = "/api/auth/login";
-        public const string Profile = "/api/auth/profile";
+        private const string _prefix = "/api/auth";
+        public const string Register = _prefix + "/register";
+        public const string Login = _prefix + "/login";
+        public const string Refresh = _prefix + "/refresh";
+        public const string Logout = _prefix + "/logout";
+        public const string Profile = _prefix + "/profile";
     }
 
     public static class Accounts

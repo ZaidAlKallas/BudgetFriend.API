@@ -1,8 +1,8 @@
+using BudgetFriend.API.Database.Entites;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using BudgetFriend.API.Database.Entites;
-using Microsoft.IdentityModel.Tokens;
 
 namespace BudgetFriend.API.IntegrationTests.CustomWebApplicationFactory;
 
@@ -13,7 +13,8 @@ public static class TestAuthHelpers
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email)
+            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
         var key = new SymmetricSecurityKey(

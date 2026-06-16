@@ -1,11 +1,10 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using BudgetFriend.API.Database.Entites;
-using Microsoft.IdentityModel.Tokens;
 using BudgetFriend.API.Features.Authentication.Jwt;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Moq;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace BudgetFriend.API.UnitTests.Jwt;
 
@@ -37,7 +36,7 @@ public sealed class JwtTokenGeneratorTests
             Email = "test@example.com"
         };
 
-        var token = _sut.Generate(user);
+        var (token, _) = _sut.Generate(user);
 
         var handler = new JwtSecurityTokenHandler();
         var canRead = handler.CanReadToken(token);
@@ -54,7 +53,7 @@ public sealed class JwtTokenGeneratorTests
             Email = "test@example.com"
         };
 
-        var token = _sut.Generate(user);
+        var (token, _) = _sut.Generate(user);
 
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
@@ -70,7 +69,7 @@ public sealed class JwtTokenGeneratorTests
             Email = "test@example.com"
         };
 
-        var token = _sut.Generate(user);
+        var (token, _) = _sut.Generate(user);
 
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
@@ -86,7 +85,7 @@ public sealed class JwtTokenGeneratorTests
             Email = "test@example.com"
         };
 
-        var token = _sut.Generate(user);
+        var (token, _) = _sut.Generate(user);
 
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
@@ -102,7 +101,7 @@ public sealed class JwtTokenGeneratorTests
             Email = "test@example.com"
         };
 
-        var token = _sut.Generate(user);
+        var (token, _) = _sut.Generate(user);
 
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
@@ -118,7 +117,7 @@ public sealed class JwtTokenGeneratorTests
             Email = "test@example.com"
         };
 
-        var token = _sut.Generate(user);
+        var (token, _) = _sut.Generate(user);
 
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
@@ -134,7 +133,7 @@ public sealed class JwtTokenGeneratorTests
             Email = "test@example.com"
         };
 
-        var token = _sut.Generate(user);
+        var (token, _) = _sut.Generate(user);
 
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
@@ -159,5 +158,37 @@ public sealed class JwtTokenGeneratorTests
         var act = () => generator.Generate(user);
 
         act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Generate_ShouldContainJtiClaim_WhenUserIsValid()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "test@example.com"
+        };
+
+        var (token, jwtId) = _sut.Generate(user);
+
+        var handler = new JwtSecurityTokenHandler();
+        var jwtToken = handler.ReadJwtToken(token);
+        jwtToken.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Jti && c.Value == jwtId);
+    }
+
+    [Fact]
+    public void GetJwtId_ShouldReturnCorrectJwtId_WhenTokenIsValid()
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = "test@example.com"
+        };
+
+        var (token, jwtId) = _sut.Generate(user);
+
+        var result = _sut.GetJwtId(token);
+
+        result.Should().Be(jwtId);
     }
 }
