@@ -15,5 +15,21 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  api:
+    build: ./BudgetFriend.Api
+
+    container_name: budgetfriend.api
+
+    depends_on:
+      - postgres
+
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+
+      ConnectionStrings__Database: Host=postgres;Port=5432;Database=budgetfriend_db;Username=postgres;Password=postgres
+
+    ports:
+      - "8080:8080"
+
 volumes:
   postgres_data:

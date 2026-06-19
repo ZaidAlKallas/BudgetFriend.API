@@ -43,7 +43,7 @@ builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
-app.ConfigurePipline();
+await app.ConfigurePipeline();
 
 app.MapAuthenticationEndpoints();
 app.MapAccountEndpoints();
