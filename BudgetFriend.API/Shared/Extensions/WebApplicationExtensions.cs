@@ -1,4 +1,7 @@
+using BudgetFriend.API.Database;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using Serilog;
 using Serilog.Context;
 using System.Security.Claims;
 
@@ -6,7 +9,7 @@ namespace BudgetFriend.API.Shared.Extensions;
 
 public static class WebApplicationExtensions
 {
-    public static WebApplication ConfigurePipline(this WebApplication app)
+    public static async Task<WebApplication> ConfigurePipeline(this WebApplication app)
     {
 
         if (app.Environment.IsDevelopment())
@@ -21,6 +24,22 @@ public static class WebApplicationExtensions
                     config.TokenName = "Authorization";
                 });
             });
+
+            using var scope = app.Services.CreateScope();
+
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            try
+            {
+                Log.Information("Applying database migrations...");
+                await db.Database.MigrateAsync();
+                Log.Information("Database migrations applied successfully.");
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Failed to apply database migrations.");
+                throw;
+            }
         }
 
         app.UseHttpsRedirection();
@@ -33,7 +52,11 @@ public static class WebApplicationExtensions
         {
             var userId = context.User?.FindFirstValue(ClaimTypes.NameIdentifier);
             if (userId is not null)
-                LogContext.PushProperty("UserId", userId);
+            {
+                using var _ = LogContext.PushProperty("UserId", userId);
+                await next();
+                return;
+            }
 
             await next();
         });
