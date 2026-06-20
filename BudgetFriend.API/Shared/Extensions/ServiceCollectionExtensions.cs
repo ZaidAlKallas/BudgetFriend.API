@@ -88,4 +88,13 @@ public static class ServiceCollectionExtensions
         });
         return services;
     }
+
+    public static IServiceCollection AddHealthChecks(this IServiceCollection services,
+        ConfigurationManager configuration)
+    {
+        services.AddHealthChecks()
+            .AddNpgSql(configuration.GetConnectionString("Database")!);
+
+        return services;
+    }
 }

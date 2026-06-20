@@ -7,6 +7,7 @@ using BudgetFriend.API.Features.Dashboards;
 using BudgetFriend.API.Features.Transactions;
 using BudgetFriend.API.Shared.Extensions;
 using FluentValidation;
+using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Identity;
 using Serilog;
 
@@ -39,6 +40,8 @@ builder.Services.AddLoginRateLimiting();
 builder.Services.AddHttpContextAccessor()
     .AddScoped<ICurrentUser, CurrentUser>();
 
+builder.Services.AddHealthChecks(builder.Configuration);
+
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
@@ -50,6 +53,10 @@ app.MapAccountEndpoints();
 app.MapCategoryEndpoints();
 app.MapTransactionEndpoints();
 app.MapDashboardEndpoints();
+app.MapHealthChecks("/_health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 
 await app.RunAsync();
 
