@@ -1,6 +1,7 @@
 using BudgetFriend.API.Database;
 using BudgetFriend.API.Database.Entites;
 using BudgetFriend.API.Features.Authentication;
+using BudgetFriend.API.Shared.Caching;
 using BudgetFriend.API.Shared.Validation;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,7 @@ public static class CreateCategoryEndpoint
         CreateCategoryRequest request,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ICacheService cacheService,
         ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
@@ -43,6 +45,8 @@ public static class CreateCategoryEndpoint
 
         dbContext.Categories.Add(category);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await CacheInvalidation.InvalidateFinancialDataAsync(cacheService, currentUser.UserId, cancellationToken);
 
         logger.LogInformation("Category {CategoryId} created for user {UserId}", category.Id, currentUser.UserId);
         return Results.Created(

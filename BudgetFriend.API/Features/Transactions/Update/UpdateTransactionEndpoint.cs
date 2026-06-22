@@ -1,5 +1,6 @@
 using BudgetFriend.API.Database;
 using BudgetFriend.API.Features.Authentication;
+using BudgetFriend.API.Shared.Caching;
 using BudgetFriend.API.Shared.Validation;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,7 @@ public static class UpdateTransactionEndpoint
         UpdateTransactionRequest request,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ICacheService cacheService,
         CancellationToken cancellationToken)
     {
         var transaction = await dbContext.Transactions
@@ -39,15 +41,18 @@ public static class UpdateTransactionEndpoint
                 .SetProperty(x => x.TransactionDate, request.TransactionDate),
                 cancellationToken);
 
-        return updated == 0
-            ? Results.NotFound()
-            : Results.Ok(new UpdateTransactionResponse(
-                transaction.Id,
-                transaction.AccountId,
-                transaction.CategoryId,
-                request.Amount,
-                request.Note?.Trim(),
-                request.TransactionDate,
-                transaction.CreatedAtUtc));
+        if (updated == 0)
+            return Results.NotFound();
+
+        await CacheInvalidation.InvalidateFinancialDataAsync(cacheService, currentUser.UserId, cancellationToken);
+
+        return Results.Ok(new UpdateTransactionResponse(
+            transaction.Id,
+            transaction.AccountId,
+            transaction.CategoryId,
+            request.Amount,
+            request.Note?.Trim(),
+            request.TransactionDate,
+            transaction.CreatedAtUtc));
     }
 }

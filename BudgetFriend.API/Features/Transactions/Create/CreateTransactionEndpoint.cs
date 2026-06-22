@@ -1,6 +1,7 @@
 using BudgetFriend.API.Database;
 using BudgetFriend.API.Database.Entites;
 using BudgetFriend.API.Features.Authentication;
+using BudgetFriend.API.Shared.Caching;
 using BudgetFriend.API.Shared.Validation;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,6 +22,7 @@ public static class CreateTransactionEndpoint
         CreateTransactionRequest request,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ICacheService cacheService,
         ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
@@ -50,6 +52,8 @@ public static class CreateTransactionEndpoint
 
         dbContext.Transactions.Add(transaction);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await CacheInvalidation.InvalidateFinancialDataAsync(cacheService, currentUser.UserId, cancellationToken);
 
         logger.LogInformation(
             "Transaction {TransactionId} created for account {AccountId} by user {UserId}",

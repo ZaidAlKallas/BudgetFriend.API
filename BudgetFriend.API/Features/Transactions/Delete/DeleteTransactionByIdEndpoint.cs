@@ -1,5 +1,6 @@
 using BudgetFriend.API.Database;
 using BudgetFriend.API.Features.Authentication;
+using BudgetFriend.API.Shared.Caching;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Transactions.Delete;
@@ -18,6 +19,7 @@ public static class DeleteTransactionByIdEndpoint
         Guid transactionId,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ICacheService cacheService,
         ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
@@ -27,6 +29,8 @@ public static class DeleteTransactionByIdEndpoint
 
         if (deletedRows == 0)
             return Results.NotFound();
+
+        await CacheInvalidation.InvalidateFinancialDataAsync(cacheService, currentUser.UserId, cancellationToken);
 
         logger.LogInformation("Transaction {TransactionId} deleted by user {UserId}", transactionId, currentUser.UserId);
         return Results.NoContent();

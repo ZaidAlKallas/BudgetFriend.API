@@ -1,6 +1,7 @@
 using BudgetFriend.API.Database;
 using BudgetFriend.API.Database.Enums;
 using BudgetFriend.API.Features.Authentication;
+using BudgetFriend.API.Shared.Caching;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Dashboards.GetDashboard;
@@ -17,9 +18,18 @@ public static class GetDashboardEndpoint
     private static async Task<IResult> HandleAsync(
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ICacheService cacheService,
         CancellationToken cancellationToken)
     {
         var userId = currentUser.UserId;
+
+        var cacheKey = CacheKeys.Dashboard(userId);
+        var cachedDashboard = await cacheService.GetAsync<GetDashboardResponse>(cacheKey, cancellationToken);
+        if (cachedDashboard is not null)
+        {
+            return Results.Ok(cachedDashboard);
+        }
+
         var now = DateTime.UtcNow;
         var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
 
@@ -88,13 +98,17 @@ public static class GetDashboardEndpoint
                 t.TransactionDate))
             .ToListAsync(cancellationToken);
 
-        return Results.Ok(new GetDashboardResponse(
+        var response = new GetDashboardResponse(
             totalBalance,
             monthlyIncome,
             monthlyExpenses,
             monthlyIncome - monthlyExpenses,
             accountSummaries,
             topCategories,
-            recentTransactions));
+            recentTransactions);
+
+        await cacheService.SetAsync(cacheKey, response, TimeSpan.FromMinutes(5), cancellationToken);
+
+        return Results.Ok(response);
     }
 }
