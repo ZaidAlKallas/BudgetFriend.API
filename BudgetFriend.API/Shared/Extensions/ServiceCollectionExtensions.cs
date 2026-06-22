@@ -93,7 +93,8 @@ public static class ServiceCollectionExtensions
         ConfigurationManager configuration)
     {
         services.AddHealthChecks()
-            .AddNpgSql(configuration.GetConnectionString("Database")!);
+            .AddNpgSql(configuration.GetConnectionString("Database")!)
+            .AddRedis(configuration.GetConnectionString("Redis")!);
 
         return services;
     }
