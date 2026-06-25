@@ -107,6 +107,10 @@ public static class ServiceCollectionExtensions
             options.Configuration = configuration.GetConnectionString("Redis");
         });
 
+        services.RemoveAll<ICacheService>();
+
+        services.AddSingleton<ICacheService, NoOpCacheService>();   
+
         return services;
     }
 }
