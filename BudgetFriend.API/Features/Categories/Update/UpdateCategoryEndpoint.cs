@@ -1,5 +1,6 @@
 using BudgetFriend.API.Database;
 using BudgetFriend.API.Features.Authentication;
+using BudgetFriend.API.Shared.Caching;
 using BudgetFriend.API.Shared.Validation;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +23,7 @@ public static class UpdateCategoryEndpoint
         UpdateCategoryRequest request,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ICacheService cacheService,
         CancellationToken cancellationToken)
     {
         var exists = await dbContext.Categories
@@ -41,8 +43,11 @@ public static class UpdateCategoryEndpoint
                 .SetProperty(x => x.TransactionType, request.TransactionType),
                 cancellationToken);
 
-        return updated == 0
-            ? Results.NotFound()
-            : Results.Ok(new UpdateCategoryResponse(categoryId, request.Name.Trim(), request.TransactionType));
+        if (updated == 0)
+            return Results.NotFound();
+
+        await CacheInvalidation.InvalidateFinancialDataAsync(cacheService, currentUser.UserId, cancellationToken);
+
+        return Results.Ok(new UpdateCategoryResponse(categoryId, request.Name.Trim(), request.TransactionType));
     }
 }

@@ -27,9 +27,18 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
 
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=budgetfriend_db;Username=postgres;Password=postgres
+      ConnectionStrings__Redis: redis:6379
 
     ports:
       - "8080:8080"
+
+  redis:
+    image: redis:8-alpine
+    container_name: budgetfriend.redis
+    restart: unless-stopped
+
+    ports:
+      - "6379:6379"
 
 volumes:
   postgres_data:

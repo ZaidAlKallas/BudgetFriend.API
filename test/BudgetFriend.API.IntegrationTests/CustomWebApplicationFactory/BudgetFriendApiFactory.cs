@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using System.Threading.RateLimiting;
 using Testcontainers.PostgreSql;
@@ -48,6 +50,9 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
 
             foreach (var descriptor in rateLimiterDescriptors)
                 services.Remove(descriptor);
+
+            services.RemoveAll<IDistributedCache>();
+            services.AddDistributedMemoryCache();
 
             services.Configure<RateLimiterOptions>(options =>
             {

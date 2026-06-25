@@ -93,7 +93,19 @@ public static class ServiceCollectionExtensions
         ConfigurationManager configuration)
     {
         services.AddHealthChecks()
-            .AddNpgSql(configuration.GetConnectionString("Database")!);
+            .AddNpgSql(configuration.GetConnectionString("Database")!)
+            .AddRedis(configuration.GetConnectionString("Redis")!);
+
+        return services;
+    }
+
+    public static IServiceCollection AddCaching(this IServiceCollection services,
+        ConfigurationManager configuration)
+    {
+        services.AddStackExchangeRedisCache(options =>
+        {
+            options.Configuration = configuration.GetConnectionString("Redis");
+        });
 
         return services;
     }

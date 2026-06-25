@@ -1,6 +1,7 @@
 using BudgetFriend.API.Database;
 using BudgetFriend.API.Database.Enums;
 using BudgetFriend.API.Features.Authentication;
+using BudgetFriend.API.Shared.Caching;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Dashboards.GetSummary;
@@ -19,9 +20,18 @@ public static class GetSummaryEndpoint
         DateTime? toDate,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ICacheService cacheService,
         CancellationToken cancellationToken)
     {
         var userId = currentUser.UserId;
+
+        var cacheKey = CacheKeys.Summary(userId);
+        var cachedSummary = await cacheService.GetAsync<GetSummaryResponse>(cacheKey, cancellationToken);
+        if (cachedSummary is not null)
+        {
+            return Results.Ok(cachedSummary);
+        }
+
         var now = DateTime.UtcNow;
         var from = fromDate?.ToUniversalTime() ?? new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var to = toDate?.ToUniversalTime() ?? now;
@@ -62,6 +72,10 @@ public static class GetSummaryEndpoint
                     : (totalExpenses > 0 ? Math.Round(c.TotalAmount / totalExpenses * 100, 1) : 0)))
             .ToList();
 
-        return Results.Ok(new GetSummaryResponse(totalIncome, totalExpenses, totalIncome - totalExpenses, categoryBreakdown));
+        var response = new GetSummaryResponse(totalIncome, totalExpenses, totalIncome - totalExpenses, categoryBreakdown);
+
+        await cacheService.SetAsync(cacheKey, response, TimeSpan.FromMinutes(5), cancellationToken);
+
+        return Results.Ok(response);
     }
 }
