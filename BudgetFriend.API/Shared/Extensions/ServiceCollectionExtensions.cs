@@ -1,9 +1,11 @@
 using BudgetFriend.API.Database;
 using BudgetFriend.API.Features.Authentication.Jwt;
 using BudgetFriend.API.Features.Authentication.RefreshToken;
+using BudgetFriend.API.Shared.Caching;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -107,9 +109,11 @@ public static class ServiceCollectionExtensions
             options.Configuration = configuration.GetConnectionString("Redis");
         });
 
+        //services.AddScoped<ICacheService, RedisCacheService>();
+
         services.RemoveAll<ICacheService>();
 
-        services.AddSingleton<ICacheService, NoOpCacheService>();   
+        services.AddSingleton<ICacheService, NoOpCacheService>();
 
         return services;
     }
