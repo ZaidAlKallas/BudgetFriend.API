@@ -1,3 +1,5 @@
+using BudgetFriend.API.Database.Enums;
+
 namespace BudgetFriend.API.Database.Entites;
 
 public sealed class Account
@@ -9,6 +11,8 @@ public sealed class Account
     public string Name { get; set; } = string.Empty;
 
     public decimal InitialBalance { get; set; }
+
+    public required Currency Currency { get; set; }
 
     public User User { get; set; } = null!;
 

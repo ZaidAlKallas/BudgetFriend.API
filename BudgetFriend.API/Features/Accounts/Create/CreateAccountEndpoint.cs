@@ -30,6 +30,7 @@ public static class CreateAccountEndpoint
             UserId = currentUser.UserId,
             Name = request.Name.Trim(),
             InitialBalance = request.InitialBalance,
+            Currency = request.Currency
         };
 
         var exists = await dbContext.Accounts
@@ -49,6 +50,7 @@ public static class CreateAccountEndpoint
             new CreateAccountResponse(
                 account.Id,
                 account.Name,
-                account.InitialBalance));
+                account.InitialBalance,
+                account.Currency));
     }
 }

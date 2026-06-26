@@ -25,7 +25,8 @@ public static class GetAccountByIdEndpoint
             .Select(a => new GetAccountResponse(
                 a.Id,
                 a.Name,
-                a.InitialBalance))
+                a.InitialBalance,
+                a.Currency))
             .FirstOrDefaultAsync(cancellationToken);
         return account is not null ? Results.Ok(account) : Results.NotFound();
     }
