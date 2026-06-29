@@ -3,15 +3,11 @@ using BudgetFriend.API.Database.Enums;
 namespace BudgetFriend.API.Features.Dashboards.GetSummary;
 
 public sealed record GetSummaryResponse(
+    List<CurrencySummary> Summaries);
+
+public sealed record CurrencySummary(
+    Currency Currency,
+    decimal InitialBalance,
     decimal TotalIncome,
     decimal TotalExpenses,
-    decimal NetAmount,
-    List<CategorySummary> CategoryBreakdown);
-
-public sealed record CategorySummary(
-    Guid CategoryId,
-    string CategoryName,
-    TransactionType TransactionType,
-    decimal TotalAmount,
-    int TransactionCount,
-    decimal Percentage);
+    decimal NetAmount);

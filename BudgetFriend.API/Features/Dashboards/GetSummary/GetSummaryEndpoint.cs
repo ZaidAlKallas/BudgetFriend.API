@@ -36,43 +36,39 @@ public static class GetSummaryEndpoint
         var from = fromDate?.ToUniversalTime() ?? new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var to = toDate?.ToUniversalTime() ?? now;
 
-        var categoryData = await dbContext.Transactions
+        var accountCurrencies = await dbContext.Accounts
+            .Where(a => a.UserId == userId)
+            .GroupBy(a => a.Currency)
+            .Select(g => new { Currency = g.Key, InitialBalance = g.Sum(a => a.InitialBalance) })
+            .ToListAsync(cancellationToken);
+
+        var transactionData = await dbContext.Transactions
             .Where(t => t.Account.UserId == userId
                 && t.TransactionDate >= from
                 && t.TransactionDate <= to)
-            .GroupBy(t => new { t.CategoryId, t.Category.Name, t.Category.TransactionType })
+            .GroupBy(t => t.Account.Currency)
             .Select(g => new
             {
-                g.Key.CategoryId,
-                g.Key.Name,
-                g.Key.TransactionType,
-                TotalAmount = g.Sum(t => t.Amount),
-                TransactionCount = g.Count()
+                Currency = g.Key,
+                Income = g.Where(t => t.Category.TransactionType == TransactionType.Income).Sum(t => t.Amount),
+                Expense = g.Where(t => t.Category.TransactionType == TransactionType.Expense).Sum(t => t.Amount)
             })
-            .OrderByDescending(x => x.TotalAmount)
             .ToListAsync(cancellationToken);
 
-        var totalIncome = categoryData
-            .Where(c => c.TransactionType == TransactionType.Income)
-            .Sum(c => c.TotalAmount);
+        var txByCurrency = transactionData.ToDictionary(x => x.Currency);
 
-        var totalExpenses = categoryData
-            .Where(c => c.TransactionType == TransactionType.Expense)
-            .Sum(c => c.TotalAmount);
-
-        var categoryBreakdown = categoryData
-            .Select(c => new CategorySummary(
-                c.CategoryId,
-                c.Name,
-                c.TransactionType,
-                c.TotalAmount,
-                c.TransactionCount,
-                c.TransactionType == TransactionType.Income
-                    ? (totalIncome > 0 ? Math.Round(c.TotalAmount / totalIncome * 100, 1) : 0)
-                    : (totalExpenses > 0 ? Math.Round(c.TotalAmount / totalExpenses * 100, 1) : 0)))
+        var currencySummaries = accountCurrencies
+            .Select(ac =>
+            {
+                var tx = txByCurrency.GetValueOrDefault(ac.Currency);
+                var inc = tx?.Income ?? 0m;
+                var exp = tx?.Expense ?? 0m;
+                var openingBalance = fromDate is null ? ac.InitialBalance : 0;
+                return new CurrencySummary(ac.Currency, ac.InitialBalance, inc, exp, openingBalance + inc - exp);
+            })
             .ToList();
 
-        var response = new GetSummaryResponse(totalIncome, totalExpenses, totalIncome - totalExpenses, categoryBreakdown);
+        var response = new GetSummaryResponse(currencySummaries);
 
         await cacheService.SetAsync(cacheKey, response, TimeSpan.FromMinutes(5), cancellationToken);
 
