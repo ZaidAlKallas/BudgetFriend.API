@@ -40,45 +40,44 @@ public static class GetDashboardEndpoint
                 a.Name,
                 a.InitialBalance
                     + a.Transactions.Where(t => t.Category.TransactionType == TransactionType.Income).Sum(t => t.Amount)
-                    - a.Transactions.Where(t => t.Category.TransactionType == TransactionType.Expense).Sum(t => t.Amount)))
+                    - a.Transactions.Where(t => t.Category.TransactionType == TransactionType.Expense).Sum(t => t.Amount),
+                a.Currency))
             .ToListAsync(cancellationToken);
 
-        var totalBalance = accountSummaries.Sum(a => a.Balance);
-
-        var monthlyIncome = await dbContext.Transactions
-            .Where(t => t.Account.UserId == userId
-                && t.Category.TransactionType == TransactionType.Income
-                && t.TransactionDate >= startOfMonth)
-            .SumAsync(t => (decimal?)t.Amount, cancellationToken) ?? 0m;
-
-        var monthlyExpenses = await dbContext.Transactions
-            .Where(t => t.Account.UserId == userId
-                && t.Category.TransactionType == TransactionType.Expense
-                && t.TransactionDate >= startOfMonth)
-            .SumAsync(t => (decimal?)t.Amount, cancellationToken) ?? 0m;
+        var monthlyByCurrency = await dbContext.Transactions
+            .Where(t => t.Account.UserId == userId && t.TransactionDate >= startOfMonth)
+            .GroupBy(t => t.Account.Currency)
+            .Select(g => new
+            {
+                Currency = g.Key,
+                Income = g.Where(t => t.Category.TransactionType == TransactionType.Income).Sum(t => t.Amount),
+                Expense = g.Where(t => t.Category.TransactionType == TransactionType.Expense).Sum(t => t.Amount)
+            })
+            .ToListAsync(cancellationToken);
 
         var topCategoriesData = await dbContext.Transactions
             .Where(t => t.Account.UserId == userId
                 && t.Category.TransactionType == TransactionType.Expense
                 && t.TransactionDate >= startOfMonth)
-            .GroupBy(t => new { t.CategoryId, t.Category.Name })
+            .GroupBy(t => new { t.CategoryId, t.Category.Name, t.Account.Currency })
             .Select(g => new
             {
                 g.Key.CategoryId,
                 g.Key.Name,
+                g.Key.Currency,
                 TotalAmount = g.Sum(t => t.Amount),
                 TransactionCount = g.Count()
             })
-            .OrderByDescending(x => x.TotalAmount)
-            .Take(5)
             .ToListAsync(cancellationToken);
 
         var topCategories = topCategoriesData
-            .Select(x => new CategorySpending(
-                x.CategoryId,
-                x.Name,
-                x.TotalAmount,
-                x.TransactionCount))
+            .GroupBy(x => new { x.CategoryId, x.Name })
+            .Select(g => new CategoryOverview(
+                g.Key.CategoryId,
+                g.Key.Name,
+                [.. g.Select(x => new CategoryCurrencyBreakdown(x.Currency, x.TotalAmount, x.TransactionCount))]))
+            .OrderByDescending(c => c.AmountsByCurrency.Sum(x => x.Count))
+            .Take(5)
             .ToList();
 
         var recentTransactions = await dbContext.Transactions
@@ -90,6 +89,7 @@ public static class GetDashboardEndpoint
                 t.Id,
                 t.AccountId,
                 t.Account.Name,
+                t.Account.Currency,
                 t.CategoryId,
                 t.Category.Name,
                 t.Category.TransactionType,
@@ -98,14 +98,24 @@ public static class GetDashboardEndpoint
                 t.TransactionDate))
             .ToListAsync(cancellationToken);
 
+        var monthlyIncomeByCurrency = monthlyByCurrency.ToDictionary(x => x.Currency, x => x.Income);
+        var monthlyExpensesByCurrency = monthlyByCurrency.ToDictionary(x => x.Currency, x => x.Expense);
+
+        var currencyBreakdown = accountSummaries
+            .GroupBy(a => a.Currency)
+            .Select(g =>
+            {
+                var inc = monthlyIncomeByCurrency.GetValueOrDefault(g.Key, 0m);
+                var exp = monthlyExpensesByCurrency.GetValueOrDefault(g.Key, 0m);
+                return new CurrencyOverview(g.Key, g.Sum(a => a.Balance), inc, exp, inc - exp);
+            })
+            .ToList();
+
         var response = new GetDashboardResponse(
-            totalBalance,
-            monthlyIncome,
-            monthlyExpenses,
-            monthlyIncome - monthlyExpenses,
             accountSummaries,
             topCategories,
-            recentTransactions);
+            recentTransactions,
+            currencyBreakdown);
 
         await cacheService.SetAsync(cacheKey, response, TimeSpan.FromMinutes(5), cancellationToken);
 

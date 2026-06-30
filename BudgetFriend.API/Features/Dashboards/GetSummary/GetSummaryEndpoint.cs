@@ -63,8 +63,7 @@ public static class GetSummaryEndpoint
                 var tx = txByCurrency.GetValueOrDefault(ac.Currency);
                 var inc = tx?.Income ?? 0m;
                 var exp = tx?.Expense ?? 0m;
-                var openingBalance = fromDate is null ? ac.InitialBalance : 0;
-                return new CurrencySummary(ac.Currency, ac.InitialBalance, inc, exp, openingBalance + inc - exp);
+                return new CurrencySummary(ac.Currency, ac.InitialBalance, inc, exp, inc - exp);
             })
             .ToList();
 
