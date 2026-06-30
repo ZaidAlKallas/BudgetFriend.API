@@ -1,4 +1,6 @@
-namespace BudgetFriend.API.Features.Transactions.GetAll;
+using BudgetFriend.API.Database.Enums;
+
+namespace BudgetFriend.API.Features.Transactions;
 
 public sealed record GetTransactionResponse(
     Guid Id,
@@ -6,6 +8,7 @@ public sealed record GetTransactionResponse(
     string AccountName,
     Guid CategoryId,
     string CategoryName,
+    Currency Currency,
     decimal Amount,
     string? Note,
     DateTime TransactionDate,
