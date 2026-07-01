@@ -15,6 +15,9 @@ public static class GetDashboardEndpoint
             .WithDescription("Returns an overview of the user's financial status including total balance, monthly income/expenses, account summaries, top spending categories, and recent transactions")
             .Produces<GetDashboardResponse>(StatusCodes.Status200OK);
 
+    private const int _dashboardRecentTransactions = 5;
+    private const int _dashboardTopCategories = 5;
+
     private static async Task<IResult> HandleAsync(
         AppDbContext dbContext,
         ICurrentUser currentUser,
@@ -70,21 +73,21 @@ public static class GetDashboardEndpoint
             })
             .ToListAsync(cancellationToken);
 
-        var topCategories = topCategoriesData
+        var frequentExpenseCategories = topCategoriesData
             .GroupBy(x => new { x.CategoryId, x.Name })
             .Select(g => new CategoryOverview(
                 g.Key.CategoryId,
                 g.Key.Name,
                 [.. g.Select(x => new CategoryCurrencyBreakdown(x.Currency, x.TotalAmount, x.TransactionCount))]))
             .OrderByDescending(c => c.AmountsByCurrency.Sum(x => x.Count))
-            .Take(5)
+            .Take(_dashboardTopCategories)
             .ToList();
 
         var recentTransactions = await dbContext.Transactions
             .Where(t => t.Account.UserId == userId)
             .OrderByDescending(t => t.TransactionDate)
             .ThenByDescending(t => t.CreatedAtUtc)
-            .Take(5)
+            .Take(_dashboardRecentTransactions)
             .Select(t => new RecentTransaction(
                 t.Id,
                 t.AccountId,
@@ -113,7 +116,7 @@ public static class GetDashboardEndpoint
 
         var response = new GetDashboardResponse(
             accountSummaries,
-            topCategories,
+            frequentExpenseCategories,
             recentTransactions,
             currencyBreakdown);
 

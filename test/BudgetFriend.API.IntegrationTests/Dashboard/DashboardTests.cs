@@ -125,7 +125,7 @@ public sealed class DashboardTests(BudgetFriendApiFactory factory)
     }
 
     [Fact]
-    public async Task GetDashboard_ShouldReturnTopExpenseCategories_WhenDataExists()
+    public async Task GetDashboard_ShouldReturnFrequentExpenseCategories_WhenDataExists()
     {
         var token = await SetupUserAsync("dash-top-expenses@example.com");
         await SetupDataAsync(token);
@@ -134,9 +134,11 @@ public sealed class DashboardTests(BudgetFriendApiFactory factory)
         var response = await _client.GetAsync(ApiRoutes.Dashboard.Base);
         var content = await response.Content.ReadFromJsonAsync<GetDashboardResponse>();
 
-        content!.TopExpenseCategories.Should().NotBeEmpty();
-        content.TopExpenseCategories[0].CategoryName.Should().Be("Rent");
-        content.TopExpenseCategories[0].AmountsByCurrency[0].TotalAmount.Should().Be(1500m);
+        content.FrequentExpenseCategories.Should().HaveCount(2);
+        content.FrequentExpenseCategories.Should().Contain(c => c.CategoryName == "Rent");
+        content.FrequentExpenseCategories.Should().Contain(c => c.CategoryName == "Groceries");
+        content.FrequentExpenseCategories.First(c => c.CategoryName == "Rent")
+            .AmountsByCurrency[0].TotalAmount.Should().Be(1500m);
     }
 
     [Fact]
@@ -162,7 +164,7 @@ public sealed class DashboardTests(BudgetFriendApiFactory factory)
         var content = await response.Content.ReadFromJsonAsync<GetDashboardResponse>();
 
         content!.Accounts.Should().BeEmpty();
-        content.TopExpenseCategories.Should().BeEmpty();
+        content.FrequentExpenseCategories.Should().BeEmpty();
         content.RecentTransactions.Should().BeEmpty();
         content.CurrencyBreakdown.Should().BeEmpty();
     }

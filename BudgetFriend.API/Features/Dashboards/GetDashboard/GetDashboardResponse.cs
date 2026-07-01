@@ -4,7 +4,7 @@ namespace BudgetFriend.API.Features.Dashboards.GetDashboard;
 
 public sealed record GetDashboardResponse(
     List<AccountSummary> Accounts,
-    List<CategoryOverview> TopExpenseCategories,
+    List<CategoryOverview> FrequentExpenseCategories,
     List<RecentTransaction> RecentTransactions,
     List<CurrencyOverview> CurrencyBreakdown);
 
