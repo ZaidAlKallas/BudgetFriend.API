@@ -34,5 +34,6 @@ public static class ApiRoutes
     {
         public const string Base = "/api/dashboard";
         public const string Summary = "/api/dashboard/summary";
+        public const string CategoriesAnalysis = "/api/dashboard/categories-analysis";
     }
 }

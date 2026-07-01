@@ -1,12 +1,13 @@
 using System.Net;
 using System.Net.Http.Json;
 using BudgetFriend.API.Database.Enums;
+using BudgetFriend.API.Features.Accounts;
 using BudgetFriend.API.Features.Accounts.Create;
 using BudgetFriend.API.Features.Authentication.Login;
 using BudgetFriend.API.Features.Authentication.Register;
 using BudgetFriend.API.Features.Categories.Create;
+using BudgetFriend.API.Features.Transactions;
 using BudgetFriend.API.Features.Transactions.Create;
-using BudgetFriend.API.Features.Transactions.GetAll;
 using BudgetFriend.API.Features.Transactions.Update;
 using BudgetFriend.API.IntegrationTests.CustomWebApplicationFactory;
 using FluentAssertions;
@@ -29,7 +30,7 @@ public sealed class TransactionTests(BudgetFriendApiFactory factory)
     private async Task<CreateAccountResponse> CreateAccountAsync(string token, string name, decimal balance)
     {
         _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
-        var response = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest(name, balance));
+        var response = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest(name, balance, Currency.USD));
         return (await response.Content.ReadFromJsonAsync<CreateAccountResponse>())!;
     }
 
@@ -220,7 +221,7 @@ public sealed class TransactionTests(BudgetFriendApiFactory factory)
 
         _client.DefaultRequestHeaders.Authorization = new("Bearer", loginContent.AccessToken);
 
-        var accountResponse = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("Main Account", 10000m));
+        var accountResponse = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("Main Account", 10000m, Currency.USD));
         accountResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var account = await accountResponse.Content.ReadFromJsonAsync<CreateAccountResponse>();
 

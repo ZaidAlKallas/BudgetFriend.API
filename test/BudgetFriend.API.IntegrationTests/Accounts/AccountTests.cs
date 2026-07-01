@@ -1,5 +1,4 @@
-using System.Net;
-using System.Net.Http.Json;
+using BudgetFriend.API.Database.Enums;
 using BudgetFriend.API.Features.Accounts;
 using BudgetFriend.API.Features.Accounts.Create;
 using BudgetFriend.API.Features.Accounts.Update;
@@ -7,6 +6,8 @@ using BudgetFriend.API.Features.Authentication.Login;
 using BudgetFriend.API.Features.Authentication.Register;
 using BudgetFriend.API.IntegrationTests.CustomWebApplicationFactory;
 using FluentAssertions;
+using System.Net;
+using System.Net.Http.Json;
 
 namespace BudgetFriend.API.IntegrationTests.Accounts;
 
@@ -37,7 +38,7 @@ public sealed class AccountTests(BudgetFriendApiFactory factory)
         var token = await GetTokenAsync("create-account@example.com", "Password1!");
         SetAuthHeader(token);
 
-        var request = new CreateAccountRequest("Checking Account", 1000m);
+        var request = new CreateAccountRequest("Checking Account", 1000m, Currency.USD);
 
         var response = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, request);
 
@@ -50,7 +51,7 @@ public sealed class AccountTests(BudgetFriendApiFactory factory)
         var token = await GetTokenAsync("create-account-data@example.com", "Password1!");
         SetAuthHeader(token);
 
-        var request = new CreateAccountRequest("Savings", 5000m);
+        var request = new CreateAccountRequest("Savings", 5000m, Currency.USD);
 
         var response = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, request);
         var content = await response.Content.ReadFromJsonAsync<CreateAccountResponse>();
@@ -66,7 +67,7 @@ public sealed class AccountTests(BudgetFriendApiFactory factory)
     {
         _client.DefaultRequestHeaders.Authorization = null;
 
-        var request = new CreateAccountRequest("Unauthorized", 100m);
+        var request = new CreateAccountRequest("Unauthorized", 100m, Currency.USD);
 
         var response = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, request);
 
@@ -79,7 +80,7 @@ public sealed class AccountTests(BudgetFriendApiFactory factory)
         var token = await GetTokenAsync("create-account-empty@example.com", "Password1!");
         SetAuthHeader(token);
 
-        var request = new CreateAccountRequest("", 100m);
+        var request = new CreateAccountRequest("", 100m, Currency.USD);
 
         var response = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, request);
 
@@ -92,7 +93,7 @@ public sealed class AccountTests(BudgetFriendApiFactory factory)
         var token = await GetTokenAsync("duplicate-account@example.com", "Password1!");
         SetAuthHeader(token);
 
-        var request = new CreateAccountRequest("Unique Name", 100m);
+        var request = new CreateAccountRequest("Unique Name", 100m, Currency.USD);
         await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, request);
 
         var response = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, request);
@@ -119,8 +120,8 @@ public sealed class AccountTests(BudgetFriendApiFactory factory)
         var token = await GetTokenAsync("list-accounts@example.com", "Password1!");
         SetAuthHeader(token);
 
-        await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("Account A", 100m));
-        await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("Account B", 200m));
+        await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("Account A", 100m, Currency.USD));
+        await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("Account B", 200m, Currency.USD));
 
         var response = await _client.GetAsync(ApiRoutes.Accounts.Base);
         var content = await response.Content.ReadFromJsonAsync<List<GetAccountResponse>>();
@@ -136,7 +137,7 @@ public sealed class AccountTests(BudgetFriendApiFactory factory)
         var token = await GetTokenAsync("get-account-byid@example.com", "Password1!");
         SetAuthHeader(token);
 
-        var createResponse = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("Target Account", 300m));
+        var createResponse = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("Target Account", 300m, Currency.USD));
         var createContent = await createResponse.Content.ReadFromJsonAsync<CreateAccountResponse>();
 
         var response = await _client.GetAsync(ApiRoutes.Accounts.ById(createContent!.Id));
@@ -164,7 +165,7 @@ public sealed class AccountTests(BudgetFriendApiFactory factory)
         var token = await GetTokenAsync("update-account@example.com", "Password1!");
         SetAuthHeader(token);
 
-        var createResponse = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("Old Name", 100m));
+        var createResponse = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("Old Name", 100m, Currency.USD));
         var createContent = await createResponse.Content.ReadFromJsonAsync<CreateAccountResponse>();
 
         var updateRequest = new UpdateAccountRequest("New Name", 500m);
@@ -194,7 +195,7 @@ public sealed class AccountTests(BudgetFriendApiFactory factory)
         var token = await GetTokenAsync("delete-account@example.com", "Password1!");
         SetAuthHeader(token);
 
-        var createResponse = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("To Delete", 100m));
+        var createResponse = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("To Delete", 100m, Currency.USD));
         var createContent = await createResponse.Content.ReadFromJsonAsync<CreateAccountResponse>();
 
         var response = await _client.DeleteAsync(ApiRoutes.Accounts.ById(createContent!.Id));
