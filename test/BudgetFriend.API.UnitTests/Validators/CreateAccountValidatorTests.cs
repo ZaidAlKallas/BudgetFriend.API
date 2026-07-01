@@ -1,3 +1,4 @@
+using BudgetFriend.API.Database.Enums;
 using BudgetFriend.API.Features.Accounts.Create;
 using FluentAssertions;
 using FluentValidation.TestHelper;
@@ -11,7 +12,7 @@ public sealed class CreateAccountValidatorTests
     [Fact]
     public void Validate_ShouldBeValid_WhenAllFieldsAreValid()
     {
-        var request = new CreateAccountRequest("Checking Account", 1000m);
+        var request = new CreateAccountRequest("Checking Account", 1000m, Currency.USD);
 
         var result = _sut.TestValidate(request);
 
@@ -21,7 +22,7 @@ public sealed class CreateAccountValidatorTests
     [Fact]
     public void Validate_ShouldBeValid_WhenInitialBalanceIsZero()
     {
-        var request = new CreateAccountRequest("Checking Account", 0m);
+        var request = new CreateAccountRequest("Checking Account", 0m, Currency.USD);
 
         var result = _sut.TestValidate(request);
 
@@ -31,7 +32,7 @@ public sealed class CreateAccountValidatorTests
     [Fact]
     public void Validate_ShouldHaveError_WhenNameIsEmpty()
     {
-        var request = new CreateAccountRequest("", 100m);
+        var request = new CreateAccountRequest("", 100m, Currency.USD);
 
         var result = _sut.TestValidate(request);
 
@@ -41,7 +42,7 @@ public sealed class CreateAccountValidatorTests
     [Fact]
     public void Validate_ShouldHaveError_WhenNameExceedsMaxLength()
     {
-        var request = new CreateAccountRequest(new string('a', 101), 100m);
+        var request = new CreateAccountRequest(new string('a', 101), 100m, Currency.USD);
 
         var result = _sut.TestValidate(request);
 
@@ -51,7 +52,7 @@ public sealed class CreateAccountValidatorTests
     [Fact]
     public void Validate_ShouldHaveError_WhenInitialBalanceIsNegative()
     {
-        var request = new CreateAccountRequest("Account", -1m);
+        var request = new CreateAccountRequest("Account", -1m, Currency.USD);
 
         var result = _sut.TestValidate(request);
 

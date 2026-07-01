@@ -1,6 +1,5 @@
 using BudgetFriend.API.Database;
 using BudgetFriend.API.Features.Authentication;
-using BudgetFriend.API.Features.Transactions.GetAll;
 using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Transactions.GetById;
@@ -29,6 +28,7 @@ public static class GetTransactionByIdEndpoint
                 t.Account.Name,
                 t.CategoryId,
                 t.Category.Name,
+                t.Account.Currency,
                 t.Amount,
                 t.Note,
                 t.TransactionDate,

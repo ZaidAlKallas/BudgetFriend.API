@@ -1,3 +1,4 @@
+using BudgetFriend.API.Features.Dashboards.GetCategoriesAnalysis;
 using BudgetFriend.API.Features.Dashboards.GetDashboard;
 using BudgetFriend.API.Features.Dashboards.GetSummary;
 
@@ -14,6 +15,7 @@ public static class DashboardEndpoints
 
         group.MapGetDashboard();
         group.MapGetSummary();
+        group.MapGetCategoriesAnalysis();
 
         return app;
     }

@@ -28,6 +28,7 @@ public static class GetAllTransactionsEndpoint
                 t.Account.Name,
                 t.CategoryId,
                 t.Category.Name,
+                t.Account.Currency,
                 t.Amount,
                 t.Note,
                 t.TransactionDate,

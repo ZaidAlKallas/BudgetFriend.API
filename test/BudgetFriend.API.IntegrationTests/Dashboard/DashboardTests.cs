@@ -3,6 +3,7 @@ using BudgetFriend.API.Features.Accounts.Create;
 using BudgetFriend.API.Features.Authentication.Login;
 using BudgetFriend.API.Features.Authentication.Register;
 using BudgetFriend.API.Features.Categories.Create;
+using BudgetFriend.API.Features.Dashboards.GetCategoriesAnalysis;
 using BudgetFriend.API.Features.Dashboards.GetDashboard;
 using BudgetFriend.API.Features.Dashboards.GetSummary;
 using BudgetFriend.API.Features.Transactions.Create;
@@ -30,7 +31,7 @@ public sealed class DashboardTests(BudgetFriendApiFactory factory)
     {
         _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
 
-        var accountResponse = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("Main Account", 1000m));
+        var accountResponse = await _client.PostAsJsonAsync(ApiRoutes.Accounts.Base, new CreateAccountRequest("Main Account", 1000m, Currency.USD));
         var account = await accountResponse.Content.ReadFromJsonAsync<CreateAccountResponse>();
 
         var incomeCatResponse = await _client.PostAsJsonAsync(ApiRoutes.Categories.Base, new CreateCategoryRequest("Salary", TransactionType.Income));
@@ -81,10 +82,11 @@ public sealed class DashboardTests(BudgetFriendApiFactory factory)
         var content = await response.Content.ReadFromJsonAsync<GetDashboardResponse>();
 
         content.Should().NotBeNull();
-        content!.TotalBalance.Should().Be(4300m);
-        content.MonthlyIncome.Should().Be(5000m);
-        content.MonthlyExpenses.Should().Be(1700m);
-        content.NetMonthlyIncome.Should().Be(3300m);
+        content!.CurrencyBreakdown.Should().HaveCount(1);
+        content.CurrencyBreakdown[0].TotalBalance.Should().Be(4300m);
+        content.CurrencyBreakdown[0].MonthlyIncome.Should().Be(5000m);
+        content.CurrencyBreakdown[0].MonthlyExpenses.Should().Be(1700m);
+        content.CurrencyBreakdown[0].NetMonthlyIncome.Should().Be(3300m);
     }
 
     [Fact]
@@ -100,10 +102,30 @@ public sealed class DashboardTests(BudgetFriendApiFactory factory)
         content!.Accounts.Should().HaveCount(1);
         content.Accounts[0].Name.Should().Be("Main Account");
         content.Accounts[0].Balance.Should().Be(4300m);
+        content.Accounts[0].Currency.Should().Be(Currency.USD);
     }
 
     [Fact]
-    public async Task GetDashboard_ShouldReturnTopExpenseCategories_WhenDataExists()
+    public async Task GetDashboard_ShouldReturnCurrencyBreakdown_WhenDataExists()
+    {
+        var token = await SetupUserAsync("dash-currency@example.com");
+        await SetupDataAsync(token);
+        _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
+
+        var response = await _client.GetAsync(ApiRoutes.Dashboard.Base);
+        var content = await response.Content.ReadFromJsonAsync<GetDashboardResponse>();
+
+        content!.CurrencyBreakdown.Should().HaveCount(1);
+        var usdBreakdown = content.CurrencyBreakdown[0];
+        usdBreakdown.Currency.Should().Be(Currency.USD);
+        usdBreakdown.TotalBalance.Should().Be(4300m);
+        usdBreakdown.MonthlyIncome.Should().Be(5000m);
+        usdBreakdown.MonthlyExpenses.Should().Be(1700m);
+        usdBreakdown.NetMonthlyIncome.Should().Be(3300m);
+    }
+
+    [Fact]
+    public async Task GetDashboard_ShouldReturnFrequentExpenseCategories_WhenDataExists()
     {
         var token = await SetupUserAsync("dash-top-expenses@example.com");
         await SetupDataAsync(token);
@@ -112,9 +134,11 @@ public sealed class DashboardTests(BudgetFriendApiFactory factory)
         var response = await _client.GetAsync(ApiRoutes.Dashboard.Base);
         var content = await response.Content.ReadFromJsonAsync<GetDashboardResponse>();
 
-        content!.TopExpenseCategories.Should().NotBeEmpty();
-        content.TopExpenseCategories[0].CategoryName.Should().Be("Rent");
-        content.TopExpenseCategories[0].TotalAmount.Should().Be(1500m);
+        content.FrequentExpenseCategories.Should().HaveCount(2);
+        content.FrequentExpenseCategories.Should().Contain(c => c.CategoryName == "Rent");
+        content.FrequentExpenseCategories.Should().Contain(c => c.CategoryName == "Groceries");
+        content.FrequentExpenseCategories.First(c => c.CategoryName == "Rent")
+            .AmountsByCurrency[0].TotalAmount.Should().Be(1500m);
     }
 
     [Fact]
@@ -139,13 +163,10 @@ public sealed class DashboardTests(BudgetFriendApiFactory factory)
         var response = await _client.GetAsync(ApiRoutes.Dashboard.Base);
         var content = await response.Content.ReadFromJsonAsync<GetDashboardResponse>();
 
-        content!.TotalBalance.Should().Be(0m);
-        content.MonthlyIncome.Should().Be(0m);
-        content.MonthlyExpenses.Should().Be(0m);
-        content.NetMonthlyIncome.Should().Be(0m);
-        content.Accounts.Should().BeEmpty();
-        content.TopExpenseCategories.Should().BeEmpty();
+        content!.Accounts.Should().BeEmpty();
+        content.FrequentExpenseCategories.Should().BeEmpty();
         content.RecentTransactions.Should().BeEmpty();
+        content.CurrencyBreakdown.Should().BeEmpty();
     }
 
     [Fact]
@@ -159,32 +180,16 @@ public sealed class DashboardTests(BudgetFriendApiFactory factory)
         var content = await response.Content.ReadFromJsonAsync<GetSummaryResponse>();
 
         content.Should().NotBeNull();
-        content!.TotalIncome.Should().Be(5000m);
-        content.TotalExpenses.Should().Be(1700m);
-        content.NetAmount.Should().Be(3300m);
+        content!.Summaries.Should().HaveCount(1);
+        var usd = content.Summaries[0];
+        usd.Currency.Should().Be(Currency.USD);
+        usd.TotalIncome.Should().Be(5000m);
+        usd.TotalExpenses.Should().Be(1700m);
+        usd.NetAmount.Should().Be(3300m);
     }
 
     [Fact]
-    public async Task GetSummary_ShouldReturnCategoryBreakdown_WithPercentages()
-    {
-        var token = await SetupUserAsync("summary-breakdown@example.com");
-        var (_, _, rentCatId, groceriesCatId) = await SetupDataAsync(token);
-        _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
-
-        var response = await _client.GetAsync(ApiRoutes.Dashboard.Summary);
-        var content = await response.Content.ReadFromJsonAsync<GetSummaryResponse>();
-
-        content!.CategoryBreakdown.Should().HaveCount(3);
-
-        var rentBreakdown = content.CategoryBreakdown.Single(c => c.CategoryId == rentCatId);
-        rentBreakdown.Percentage.Should().Be(88.2m);
-
-        var groceriesBreakdown = content.CategoryBreakdown.Single(c => c.CategoryId == groceriesCatId);
-        groceriesBreakdown.Percentage.Should().Be(11.8m);
-    }
-
-    [Fact]
-    public async Task GetSummary_ShouldReturnEmptyBreakdown_WhenNoData()
+    public async Task GetSummary_ShouldReturnEmptySummaries_WhenNoData()
     {
         var token = await SetupUserAsync("summary-empty@example.com");
         _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
@@ -192,9 +197,51 @@ public sealed class DashboardTests(BudgetFriendApiFactory factory)
         var response = await _client.GetAsync(ApiRoutes.Dashboard.Summary);
         var content = await response.Content.ReadFromJsonAsync<GetSummaryResponse>();
 
-        content!.TotalIncome.Should().Be(0m);
-        content.TotalExpenses.Should().Be(0m);
-        content.NetAmount.Should().Be(0m);
-        content.CategoryBreakdown.Should().BeEmpty();
+        content!.Summaries.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetCategoriesAnalysis_ShouldReturnCategoryBreakdown_WithPercentages()
+    {
+        var token = await SetupUserAsync("cat-analysis@example.com");
+        var (_, _, rentCatId, groceriesCatId) = await SetupDataAsync(token);
+        _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
+
+        var response = await _client.GetAsync(ApiRoutes.Dashboard.CategoriesAnalysis);
+        var content = await response.Content.ReadFromJsonAsync<GetCategoriesAnalysisResponse>();
+
+        content.Should().NotBeNull();
+        content.CategoryBreakdown.Should().HaveCount(3);
+
+        var rentBreakdown = content.CategoryBreakdown.Single(c => c.CategoryId == rentCatId);
+        rentBreakdown.CurrencyBreakdown.Should().HaveCount(1);
+        rentBreakdown.CurrencyBreakdown[0].Percentage.Should().Be(88.2m);
+
+        var groceriesBreakdown = content.CategoryBreakdown.Single(c => c.CategoryId == groceriesCatId);
+        groceriesBreakdown.CurrencyBreakdown.Should().HaveCount(1);
+        groceriesBreakdown.CurrencyBreakdown[0].Percentage.Should().Be(11.8m);
+    }
+
+    [Fact]
+    public async Task GetCategoriesAnalysis_ShouldReturnEmptyBreakdown_WhenNoData()
+    {
+        var token = await SetupUserAsync("cat-analysis-empty@example.com");
+        _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
+
+        var response = await _client.GetAsync(ApiRoutes.Dashboard.CategoriesAnalysis);
+        var content = await response.Content.ReadFromJsonAsync<GetCategoriesAnalysisResponse>();
+
+        content!.CategoryBreakdown.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetCategoriesAnalysis_ShouldReturn200_WhenAuthenticated()
+    {
+        var token = await SetupUserAsync("cat-analysis-auth@example.com");
+        _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
+
+        var response = await _client.GetAsync(ApiRoutes.Dashboard.CategoriesAnalysis);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }

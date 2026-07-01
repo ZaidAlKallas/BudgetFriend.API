@@ -24,7 +24,8 @@ public static class GetAllAccountsEndpoint
             .Select(a => new GetAccountResponse(
                 a.Id,
                 a.Name,
-                a.InitialBalance))
+                a.InitialBalance,
+                a.Currency))
             .ToListAsync(cancellationToken);
         return Results.Ok(accounts);
     }

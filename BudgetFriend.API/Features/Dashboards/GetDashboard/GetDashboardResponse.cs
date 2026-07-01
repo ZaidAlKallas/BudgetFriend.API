@@ -3,29 +3,39 @@ using BudgetFriend.API.Database.Enums;
 namespace BudgetFriend.API.Features.Dashboards.GetDashboard;
 
 public sealed record GetDashboardResponse(
-    decimal TotalBalance,
-    decimal MonthlyIncome,
-    decimal MonthlyExpenses,
-    decimal NetMonthlyIncome,
     List<AccountSummary> Accounts,
-    List<CategorySpending> TopExpenseCategories,
-    List<RecentTransaction> RecentTransactions);
+    List<CategoryOverview> FrequentExpenseCategories,
+    List<RecentTransaction> RecentTransactions,
+    List<CurrencyOverview> CurrencyBreakdown);
 
 public sealed record AccountSummary(
     Guid Id,
     string Name,
-    decimal Balance);
+    decimal Balance,
+    Currency Currency);
 
-public sealed record CategorySpending(
+public sealed record CurrencyOverview(
+    Currency Currency,
+    decimal TotalBalance,
+    decimal MonthlyIncome,
+    decimal MonthlyExpenses,
+    decimal NetMonthlyIncome);
+
+public sealed record CategoryOverview(
     Guid CategoryId,
     string CategoryName,
+    List<CategoryCurrencyBreakdown> AmountsByCurrency);
+
+public sealed record CategoryCurrencyBreakdown(
+    Currency Currency,
     decimal TotalAmount,
-    int TransactionCount);
+    int Count);
 
 public sealed record RecentTransaction(
     Guid Id,
     Guid AccountId,
     string AccountName,
+    Currency Currency,
     Guid CategoryId,
     string CategoryName,
     TransactionType TransactionType,
