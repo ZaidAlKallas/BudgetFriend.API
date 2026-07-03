@@ -8,9 +8,7 @@ public static class CacheInvalidation
         CancellationToken cancellationToken)
     {
         await InvalidateDashboardAsync(cacheService, userId, cancellationToken);
-
-        await InvalidateSummarydAsync(cacheService, userId, cancellationToken);
-
+        await InvalidateSummaryAsync(cacheService, userId, cancellationToken);
     }
 
     public static async Task InvalidateDashboardAsync(
@@ -21,12 +19,12 @@ public static class CacheInvalidation
         await cacheService.RemoveAsync(CacheKeys.Dashboard(userId), cancellationToken);
     }
 
-    public static async Task InvalidateSummarydAsync(
+    public static async Task InvalidateSummaryAsync(
         ICacheService cacheService,
         Guid userId,
         CancellationToken cancellationToken)
     {
-        await cacheService.RemoveAsync(CacheKeys.Summary(userId), cancellationToken);
+        await cacheService.RemoveByPrefixAsync(CacheKeys.SummaryPrefix(userId), cancellationToken);
     }
 }
 

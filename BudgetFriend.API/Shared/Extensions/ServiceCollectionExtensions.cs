@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 using System.Text;
 using System.Threading.RateLimiting;
 
@@ -106,6 +107,10 @@ public static class ServiceCollectionExtensions
         {
             options.Configuration = configuration.GetConnectionString("Redis");
         });
+
+        var redisConfig = ConfigurationOptions.Parse(configuration.GetConnectionString("Redis")!);
+        redisConfig.AbortOnConnectFail = false;
+        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConfig));
 
         return services;
     }

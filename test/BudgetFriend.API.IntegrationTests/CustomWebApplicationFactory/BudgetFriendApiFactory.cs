@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 using System.Threading.RateLimiting;
 using Testcontainers.PostgreSql;
 
@@ -53,6 +54,8 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
 
             services.RemoveAll<IDistributedCache>();
             services.AddDistributedMemoryCache();
+
+            services.RemoveAll<IConnectionMultiplexer>();
 
             services.Configure<RateLimiterOptions>(options =>
             {

@@ -25,16 +25,16 @@ public static class GetSummaryEndpoint
     {
         var userId = currentUser.UserId;
 
-        var cacheKey = CacheKeys.Summary(userId);
+        var now = DateTime.UtcNow;
+        var from = fromDate?.ToUniversalTime() ?? new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var to = toDate?.ToUniversalTime() ?? now;
+
+        var cacheKey = CacheKeys.Summary(userId, fromDate, toDate);
         var cachedSummary = await cacheService.GetAsync<GetSummaryResponse>(cacheKey, cancellationToken);
         if (cachedSummary is not null)
         {
             return Results.Ok(cachedSummary);
         }
-
-        var now = DateTime.UtcNow;
-        var from = fromDate?.ToUniversalTime() ?? new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
-        var to = toDate?.ToUniversalTime() ?? now;
 
         var accountCurrencies = await dbContext.Accounts
             .Where(a => a.UserId == userId)
