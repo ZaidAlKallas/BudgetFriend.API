@@ -27,7 +27,7 @@ public static class GetAllTransactionsEndpoint
                 t.AccountId,
                 t.Account.Name,
                 t.CategoryId,
-                t.Category.Name,
+                t.Category != null ? t.Category.Name : null,
                 t.Account.Currency,
                 t.Amount,
                 t.Note,

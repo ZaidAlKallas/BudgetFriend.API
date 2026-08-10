@@ -1,5 +1,4 @@
 using BudgetFriend.API.Database.Enums;
-using BudgetFriend.API.Features.Accounts.Create;
 using BudgetFriend.API.Features.Authentication.Login;
 using BudgetFriend.API.Features.Authentication.Register;
 using BudgetFriend.API.Features.Categories.Create;
@@ -7,6 +6,7 @@ using BudgetFriend.API.Features.Dashboards.GetCategoriesAnalysis;
 using BudgetFriend.API.Features.Dashboards.GetDashboard;
 using BudgetFriend.API.Features.Dashboards.GetSummary;
 using BudgetFriend.API.Features.Transactions.Create;
+using BudgetFriend.API.Features.Accounts.Create;
 using BudgetFriend.API.IntegrationTests.CustomWebApplicationFactory;
 using FluentAssertions;
 using System.Net;
@@ -43,9 +43,9 @@ public sealed class DashboardTests(BudgetFriendApiFactory factory)
         var groceriesCatResponse = await _client.PostAsJsonAsync(ApiRoutes.Categories.Base, new CreateCategoryRequest("Groceries", TransactionType.Expense));
         var groceriesCat = await groceriesCatResponse.Content.ReadFromJsonAsync<CreateCategoryResponse>();
 
-        await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account!.Id, incomeCat!.Id, 5000m, "Monthly salary", DateTime.UtcNow));
-        await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, rentCat!.Id, 1500m, "Monthly rent", DateTime.UtcNow));
-        await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, groceriesCat!.Id, 200m, "Groceries", DateTime.UtcNow));
+        await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account!.Id, incomeCat!.Id, 5000m, TransactionType.Income, "Monthly salary", DateTime.UtcNow));
+        await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, rentCat!.Id, 1500m, TransactionType.Expense, "Monthly rent", DateTime.UtcNow));
+        await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, groceriesCat!.Id, 200m, TransactionType.Expense, "Groceries", DateTime.UtcNow));
 
         return (account.Id, incomeCat.Id, rentCat.Id, groceriesCat.Id);
     }
@@ -134,7 +134,7 @@ public sealed class DashboardTests(BudgetFriendApiFactory factory)
         var response = await _client.GetAsync(ApiRoutes.Dashboard.Base);
         var content = await response.Content.ReadFromJsonAsync<GetDashboardResponse>();
 
-        content.FrequentExpenseCategories.Should().HaveCount(2);
+        content!.FrequentExpenseCategories.Should().HaveCount(2);
         content.FrequentExpenseCategories.Should().Contain(c => c.CategoryName == "Rent");
         content.FrequentExpenseCategories.Should().Contain(c => c.CategoryName == "Groceries");
         content.FrequentExpenseCategories.First(c => c.CategoryName == "Rent")
@@ -211,7 +211,7 @@ public sealed class DashboardTests(BudgetFriendApiFactory factory)
         var content = await response.Content.ReadFromJsonAsync<GetCategoriesAnalysisResponse>();
 
         content.Should().NotBeNull();
-        content.CategoryBreakdown.Should().HaveCount(3);
+        content!.CategoryBreakdown.Should().HaveCount(3);
 
         var rentBreakdown = content.CategoryBreakdown.Single(c => c.CategoryId == rentCatId);
         rentBreakdown.CurrencyBreakdown.Should().HaveCount(1);

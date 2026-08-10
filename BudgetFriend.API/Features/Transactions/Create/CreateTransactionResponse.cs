@@ -3,7 +3,7 @@ namespace BudgetFriend.API.Features.Transactions.Create;
 public sealed record CreateTransactionResponse(
     Guid Id,
     Guid AccountId,
-    Guid CategoryId,
+    Guid? CategoryId,
     decimal Amount,
     string? Note,
     DateTime TransactionDate,

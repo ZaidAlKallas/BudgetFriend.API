@@ -46,6 +46,7 @@ public static class CreateTransactionEndpoint
             AccountId = request.AccountId,
             CategoryId = request.CategoryId,
             Amount = request.Amount,
+            TransactionType = request.TransactionType,
             Note = request.Note?.Trim(),
             TransactionDate = request.TransactionDate ?? DateTime.UtcNow,
         };
