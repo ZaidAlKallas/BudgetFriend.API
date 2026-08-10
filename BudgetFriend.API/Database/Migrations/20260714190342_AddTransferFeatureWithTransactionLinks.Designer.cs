@@ -196,9 +196,6 @@ namespace BudgetFriend.API.Database.Migrations
                     b.Property<DateTime>("TransferDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("FromAccountId");
@@ -210,8 +207,6 @@ namespace BudgetFriend.API.Database.Migrations
                     b.HasIndex("ToAccountId");
 
                     b.HasIndex("TransferDate");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Transfers");
                 });
@@ -334,10 +329,6 @@ namespace BudgetFriend.API.Database.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BudgetFriend.API.Database.Entites.User", null)
-                        .WithMany("Transfers")
-                        .HasForeignKey("UserId");
-
                     b.Navigation("FromAccount");
 
                     b.Navigation("IncomingTransaction");
@@ -364,8 +355,6 @@ namespace BudgetFriend.API.Database.Migrations
                     b.Navigation("Categories");
 
                     b.Navigation("RefreshTokens");
-
-                    b.Navigation("Transfers");
                 });
 #pragma warning restore 612, 618
         }

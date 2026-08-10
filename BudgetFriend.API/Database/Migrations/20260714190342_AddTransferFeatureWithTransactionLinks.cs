@@ -39,8 +39,7 @@ namespace BudgetFriend.API.Database.Migrations
                     ToAmount = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
                     TransferDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Note = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: true)
+                    CreatedAtUtc = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -69,11 +68,6 @@ namespace BudgetFriend.API.Database.Migrations
                         principalTable: "Transactions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Transfers_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(
@@ -100,11 +94,6 @@ namespace BudgetFriend.API.Database.Migrations
                 name: "IX_Transfers_TransferDate",
                 table: "Transfers",
                 column: "TransferDate");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Transfers_UserId",
-                table: "Transfers",
-                column: "UserId");
         }
 
         /// <inheritdoc />

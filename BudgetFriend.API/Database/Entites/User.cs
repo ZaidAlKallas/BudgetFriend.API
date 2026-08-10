@@ -20,8 +20,6 @@ public sealed class User
 
     public ICollection<Account> Accounts { get; set; } = [];
 
-    public ICollection<Transfer> Transfers { get; set; } = [];
-
     public ICollection<Category> Categories { get; set; } = [];
 
     public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
