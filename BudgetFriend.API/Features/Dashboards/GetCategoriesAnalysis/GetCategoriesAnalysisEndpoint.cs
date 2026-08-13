@@ -1,8 +1,3 @@
-using BudgetFriend.API.Database;
-using BudgetFriend.API.Database.Enums;
-using BudgetFriend.API.Features.Authentication;
-using Microsoft.EntityFrameworkCore;
-
 namespace BudgetFriend.API.Features.Dashboards.GetCategoriesAnalysis;
 
 public static class GetCategoriesAnalysisEndpoint

@@ -1,5 +1,3 @@
-using BudgetFriend.API.Database.Enums;
-
 namespace BudgetFriend.API.Features.Dashboards.GetCategoriesAnalysis;
 
 public sealed record GetCategoriesAnalysisResponse(List<CategoryAnalysis> CategoryBreakdown);

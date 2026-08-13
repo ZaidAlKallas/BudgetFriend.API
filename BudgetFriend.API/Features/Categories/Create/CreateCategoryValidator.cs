@@ -1,4 +1,3 @@
-using BudgetFriend.API.Database.Enums;
 using FluentValidation;
 
 namespace BudgetFriend.API.Features.Categories.Create;

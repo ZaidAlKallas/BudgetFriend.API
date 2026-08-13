@@ -1,4 +1,4 @@
-using BudgetFriend.API.Database.Entites;
+using BudgetFriend.API.Database.Entities;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;

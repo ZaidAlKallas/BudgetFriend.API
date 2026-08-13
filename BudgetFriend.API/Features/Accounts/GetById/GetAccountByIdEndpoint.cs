@@ -1,7 +1,3 @@
-using BudgetFriend.API.Database;
-using BudgetFriend.API.Features.Authentication;
-using Microsoft.EntityFrameworkCore;
-
 namespace BudgetFriend.API.Features.Accounts.GetById;
 
 public static class GetAccountByIdEndpoint

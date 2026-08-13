@@ -1,5 +1,3 @@
-using BudgetFriend.API.Database;
-using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Context;

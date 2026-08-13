@@ -1,9 +1,3 @@
-using BudgetFriend.API.Database;
-using BudgetFriend.API.Database.Entites;
-using BudgetFriend.API.Features.Authentication;
-using BudgetFriend.API.Shared.Validation;
-using Microsoft.EntityFrameworkCore;
-
 namespace BudgetFriend.API.Features.Accounts.Create;
 
 public static class CreateAccountEndpoint

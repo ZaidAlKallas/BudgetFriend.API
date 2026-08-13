@@ -1,5 +1,3 @@
-using BudgetFriend.API.Database.Entites;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BudgetFriend.Api.Database.Configurations;

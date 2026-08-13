@@ -1,5 +1,3 @@
-using BudgetFriend.API.Database.Enums;
-
 namespace BudgetFriend.API.Features.Dashboards.GetSummary;
 
 public sealed record GetSummaryResponse(

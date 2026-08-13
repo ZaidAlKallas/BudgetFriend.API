@@ -1,10 +1,3 @@
-using BudgetFriend.API.Database;
-using BudgetFriend.API.Database.Entites;
-using BudgetFriend.API.Features.Authentication;
-using BudgetFriend.API.Shared.Caching;
-using BudgetFriend.API.Shared.Validation;
-using Microsoft.EntityFrameworkCore;
-
 namespace BudgetFriend.API.Features.Transactions.Create;
 
 public static class CreateTransactionEndpoint

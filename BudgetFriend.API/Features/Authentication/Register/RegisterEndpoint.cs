@@ -1,8 +1,4 @@
-using BudgetFriend.API.Database;
-using BudgetFriend.API.Database.Entites;
-using BudgetFriend.API.Shared.Validation;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Authentication.Register;
 

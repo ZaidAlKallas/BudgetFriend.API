@@ -1,10 +1,6 @@
-using BudgetFriend.API.Database;
-using BudgetFriend.API.Database.Entites;
 using BudgetFriend.API.Features.Authentication.Jwt;
 using BudgetFriend.API.Features.Authentication.RefreshToken;
-using BudgetFriend.API.Shared.Validation;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace BudgetFriend.API.Features.Authentication.Login;

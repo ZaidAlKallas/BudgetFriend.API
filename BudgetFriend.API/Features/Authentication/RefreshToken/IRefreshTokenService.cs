@@ -1,5 +1,3 @@
-using BudgetFriend.API.Database.Entites;
-
 namespace BudgetFriend.API.Features.Authentication.RefreshToken;
 
 public interface IRefreshTokenService

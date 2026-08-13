@@ -1,8 +1,3 @@
-using BudgetFriend.API.Database;
-using BudgetFriend.API.Features.Authentication;
-using BudgetFriend.API.Shared.Caching;
-using Microsoft.EntityFrameworkCore;
-
 namespace BudgetFriend.API.Features.Transactions.Delete;
 
 public static class DeleteTransactionByIdEndpoint

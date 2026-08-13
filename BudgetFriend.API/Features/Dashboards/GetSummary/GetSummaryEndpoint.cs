@@ -1,9 +1,3 @@
-using BudgetFriend.API.Database;
-using BudgetFriend.API.Database.Enums;
-using BudgetFriend.API.Features.Authentication;
-using BudgetFriend.API.Shared.Caching;
-using Microsoft.EntityFrameworkCore;
-
 namespace BudgetFriend.API.Features.Dashboards.GetSummary;
 
 public static class GetSummaryEndpoint

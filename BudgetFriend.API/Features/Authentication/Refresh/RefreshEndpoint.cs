@@ -1,6 +1,5 @@
 using BudgetFriend.API.Features.Authentication.Jwt;
 using BudgetFriend.API.Features.Authentication.RefreshToken;
-using BudgetFriend.API.Shared.Validation;
 
 namespace BudgetFriend.API.Features.Authentication.Refresh;
 

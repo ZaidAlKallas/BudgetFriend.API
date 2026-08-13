@@ -1,6 +1,3 @@
-using BudgetFriend.API.Database;
-using Microsoft.EntityFrameworkCore;
-
 namespace BudgetFriend.API.Features.Authentication;
 
 public static class ProfileEndpoint

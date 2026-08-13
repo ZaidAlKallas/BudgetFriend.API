@@ -1,8 +1,4 @@
-using BudgetFriend.API.Database;
-using BudgetFriend.API.Features.Authentication;
-using BudgetFriend.API.Shared.Validation;
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 
 namespace BudgetFriend.API.Features.Accounts.Update;
 

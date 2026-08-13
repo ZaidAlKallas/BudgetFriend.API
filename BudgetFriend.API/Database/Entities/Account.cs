@@ -1,8 +1,6 @@
-using BudgetFriend.API.Database.Enums;
+namespace BudgetFriend.API.Database.Entities;
 
-namespace BudgetFriend.API.Database.Entites;
-
-public sealed class Category
+public sealed class Account
 {
     public Guid Id { get; set; }
 
@@ -10,7 +8,9 @@ public sealed class Category
 
     public string Name { get; set; } = string.Empty;
 
-    public TransactionType TransactionType { get; set; }
+    public decimal InitialBalance { get; set; }
+
+    public required Currency Currency { get; set; }
 
     public User User { get; set; } = null!;
 

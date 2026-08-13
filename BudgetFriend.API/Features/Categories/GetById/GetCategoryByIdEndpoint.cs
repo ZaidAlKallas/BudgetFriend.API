@@ -1,7 +1,3 @@
-using BudgetFriend.API.Database;
-using BudgetFriend.API.Features.Authentication;
-using Microsoft.EntityFrameworkCore;
-
 namespace BudgetFriend.API.Features.Categories.GetById;
 
 public static class GetCategoryByIdEndpoint

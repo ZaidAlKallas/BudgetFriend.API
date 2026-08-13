@@ -1,7 +1,3 @@
-using BudgetFriend.API.Database;
-using BudgetFriend.API.Features.Authentication;
-using Microsoft.EntityFrameworkCore;
-
 namespace BudgetFriend.API.Features.Transactions.GetById;
 
 public static class GetTransactionByIdEndpoint

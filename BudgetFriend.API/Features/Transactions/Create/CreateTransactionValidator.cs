@@ -1,4 +1,3 @@
-using BudgetFriend.API.Database.Enums;
 using FluentValidation;
 
 namespace BudgetFriend.API.Features.Transactions.Create;
@@ -10,7 +9,7 @@ public sealed class CreateTransactionValidator : AbstractValidator<CreateTransac
         RuleFor(x => x.AccountId)
             .NotEmpty();
 
-        When(x => x.TransactionType == TransactionType.Income || x.TransactionType == TransactionType.Expense, () =>
+        When(x => x.TransactionType is TransactionType.Income or TransactionType.Expense, () =>
         {
             RuleFor(x => x.CategoryId)
                 .NotNull()

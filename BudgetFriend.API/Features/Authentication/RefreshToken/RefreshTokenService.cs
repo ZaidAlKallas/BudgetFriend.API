@@ -1,6 +1,3 @@
-using BudgetFriend.API.Database;
-using BudgetFriend.API.Database.Entites;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -8,15 +5,15 @@ namespace BudgetFriend.API.Features.Authentication.RefreshToken;
 
 internal sealed class RefreshTokenService(AppDbContext dbContext) : IRefreshTokenService
 {
-    private static readonly TimeSpan Expiration = TimeSpan.FromDays(30);
+    private static readonly TimeSpan _expiration = TimeSpan.FromDays(30);
 
     public async Task<(string Token, DateTime ExpiresAtUtc)> GenerateAsync(User user, string jwtId, CancellationToken cancellationToken)
     {
         var rawToken = GenerateTokenValue();
         var tokenHash = HashToken(rawToken);
-        var expiresAtUtc = DateTime.UtcNow.Add(Expiration);
+        var expiresAtUtc = DateTime.UtcNow.Add(_expiration);
 
-        var refreshToken = new Database.Entites.RefreshToken
+        var refreshToken = new Database.Entities.RefreshToken
         {
             Id = Guid.NewGuid(),
             UserId = user.Id,
@@ -26,7 +23,7 @@ internal sealed class RefreshTokenService(AppDbContext dbContext) : IRefreshToke
             ExpiresAtUtc = expiresAtUtc
         };
 
-        dbContext.Set<Database.Entites.RefreshToken>().Add(refreshToken);
+        dbContext.Set<Database.Entities.RefreshToken>().Add(refreshToken);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return (rawToken, expiresAtUtc);
@@ -36,7 +33,7 @@ internal sealed class RefreshTokenService(AppDbContext dbContext) : IRefreshToke
     {
         var tokenHash = HashToken(refreshToken);
 
-        var entity = await dbContext.Set<Database.Entites.RefreshToken>()
+        var entity = await dbContext.Set<Database.Entities.RefreshToken>()
             .AsTracking()
             .Include(x => x.User)
             .Where(x => x.TokenHash == tokenHash)
@@ -55,7 +52,7 @@ internal sealed class RefreshTokenService(AppDbContext dbContext) : IRefreshToke
 
     public async Task RevokeAllForUserAsync(Guid userId, CancellationToken cancellationToken)
     {
-        await dbContext.Set<Database.Entites.RefreshToken>()
+        await dbContext.Set<Database.Entities.RefreshToken>()
             .Where(x => x.UserId == userId && !x.IsRevoked)
             .ExecuteUpdateAsync(
                 s => s.SetProperty(x => x.IsRevoked, true),
