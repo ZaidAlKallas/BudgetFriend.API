@@ -50,8 +50,8 @@ public static class GetSummaryEndpoint
             .Select(g => new
             {
                 Currency = g.Key,
-                Income = g.Where(t => t.Category.TransactionType == TransactionType.Income).Sum(t => t.Amount),
-                Expense = g.Where(t => t.Category.TransactionType == TransactionType.Expense).Sum(t => t.Amount)
+                Income = g.Where(t => t.TransactionType == TransactionType.Income).Sum(t => t.Amount),
+                Expense = g.Where(t => t.TransactionType == TransactionType.Expense).Sum(t => t.Amount)
             })
             .ToListAsync(cancellationToken);
 

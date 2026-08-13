@@ -36,4 +36,10 @@ public static class ApiRoutes
         public const string Summary = "/api/dashboard/summary";
         public const string CategoriesAnalysis = "/api/dashboard/categories-analysis";
     }
+
+    public static class Transfers
+    {
+        public const string Base = "/api/transfers";
+        public static string ById(Guid id) => $"{Base}/{id}";
+    }
 }

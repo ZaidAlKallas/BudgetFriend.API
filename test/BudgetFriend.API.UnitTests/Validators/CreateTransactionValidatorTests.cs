@@ -1,3 +1,4 @@
+using BudgetFriend.API.Database.Enums;
 using BudgetFriend.API.Features.Transactions.Create;
 using FluentAssertions;
 using FluentValidation.TestHelper;
@@ -11,7 +12,7 @@ public sealed class CreateTransactionValidatorTests
     [Fact]
     public void Validate_ShouldBeValid_WhenAllFieldsAreValid()
     {
-        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 100m, "Test", DateTime.UtcNow);
+        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 100m, TransactionType.Expense, "Test", DateTime.UtcNow);
 
         var result = _sut.TestValidate(request);
 
@@ -21,7 +22,7 @@ public sealed class CreateTransactionValidatorTests
     [Fact]
     public void Validate_ShouldBeValid_WhenNoteIsNull()
     {
-        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 50m, null, null);
+        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 50m, TransactionType.Income, null, null);
 
         var result = _sut.TestValidate(request);
 
@@ -31,7 +32,7 @@ public sealed class CreateTransactionValidatorTests
     [Fact]
     public void Validate_ShouldHaveError_WhenAccountIdIsEmpty()
     {
-        var request = new CreateTransactionRequest(Guid.Empty, Guid.NewGuid(), 100m, null, null);
+        var request = new CreateTransactionRequest(Guid.Empty, Guid.NewGuid(), 100m, TransactionType.Expense, null, null);
 
         var result = _sut.TestValidate(request);
 
@@ -39,9 +40,9 @@ public sealed class CreateTransactionValidatorTests
     }
 
     [Fact]
-    public void Validate_ShouldHaveError_WhenCategoryIdIsEmpty()
+    public void Validate_ShouldHaveError_WhenCategoryIdIsEmpty_ForIncomeTransaction()
     {
-        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.Empty, 100m, null, null);
+        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.Empty, 100m, TransactionType.Income, null, null);
 
         var result = _sut.TestValidate(request);
 
@@ -49,9 +50,39 @@ public sealed class CreateTransactionValidatorTests
     }
 
     [Fact]
+    public void Validate_ShouldHaveError_WhenCategoryIdIsEmpty_ForExpenseTransaction()
+    {
+        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.Empty, 100m, TransactionType.Expense, null, null);
+
+        var result = _sut.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.CategoryId);
+    }
+
+    [Fact]
+    public void Validate_ShouldNotHaveError_WhenCategoryIdIsNull_ForTransferInTransaction()
+    {
+        var request = new CreateTransactionRequest(Guid.NewGuid(), null, 100m, TransactionType.TransferIn, null, null);
+
+        var result = _sut.TestValidate(request);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.CategoryId);
+    }
+
+    [Fact]
+    public void Validate_ShouldNotHaveError_WhenCategoryIdIsNull_ForTransferOutTransaction()
+    {
+        var request = new CreateTransactionRequest(Guid.NewGuid(), null, 100m, TransactionType.TransferOut, null, null);
+
+        var result = _sut.TestValidate(request);
+
+        result.ShouldNotHaveValidationErrorFor(x => x.CategoryId);
+    }
+
+    [Fact]
     public void Validate_ShouldHaveError_WhenAmountIsZero()
     {
-        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 0m, null, null);
+        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 0m, TransactionType.Expense, null, null);
 
         var result = _sut.TestValidate(request);
 
@@ -61,7 +92,7 @@ public sealed class CreateTransactionValidatorTests
     [Fact]
     public void Validate_ShouldHaveError_WhenAmountExceedsPrecision()
     {
-        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 999999999999999999m, null, null);
+        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 999999999999999999m, TransactionType.Expense, null, null);
 
         var result = _sut.TestValidate(request);
 

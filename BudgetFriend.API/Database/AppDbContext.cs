@@ -1,6 +1,3 @@
-using BudgetFriend.API.Database.Entites;
-using Microsoft.EntityFrameworkCore;
-
 namespace BudgetFriend.API.Database;
 
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
@@ -11,6 +8,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<Transfer> Transfers => Set<Transfer>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

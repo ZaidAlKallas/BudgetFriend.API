@@ -28,9 +28,10 @@ public static class GetCategoriesAnalysisEndpoint
 
         var categoryData = await dbContext.Transactions
             .Where(t => t.Account.UserId == userId
+                && t.Category != null
                 && t.TransactionDate >= from
                 && t.TransactionDate <= to)
-            .GroupBy(t => new { t.CategoryId, t.Category.Name, t.Category.TransactionType, t.Account.Currency })
+            .GroupBy(t => new { t.CategoryId, t.Category!.Name, t.Category.TransactionType, t.Account.Currency })
             .Select(g => new
             {
                 g.Key.CategoryId,
@@ -57,7 +58,7 @@ public static class GetCategoriesAnalysisEndpoint
                     return new CategoryCurrencyBreakdown(x.Currency, x.TotalAmount, x.TransactionCount, percentage);
                 }).ToList();
 
-                return new CategoryAnalysis(g.Key.CategoryId, g.Key.Name, g.Key.TransactionType, currencyBreakdowns);
+                return new CategoryAnalysis((Guid)g.Key.CategoryId!, g.Key.Name, g.Key.TransactionType, currencyBreakdowns);
             })
             .OrderByDescending(c => c.CurrencyBreakdown.Sum(x => x.TotalAmount))
             .ToList();

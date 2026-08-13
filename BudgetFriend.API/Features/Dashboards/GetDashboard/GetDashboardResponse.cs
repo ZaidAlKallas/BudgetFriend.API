@@ -1,5 +1,3 @@
-using BudgetFriend.API.Database.Enums;
-
 namespace BudgetFriend.API.Features.Dashboards.GetDashboard;
 
 public sealed record GetDashboardResponse(
@@ -36,8 +34,8 @@ public sealed record RecentTransaction(
     Guid AccountId,
     string AccountName,
     Currency Currency,
-    Guid CategoryId,
-    string CategoryName,
+    Guid? CategoryId,
+    string? CategoryName,
     TransactionType TransactionType,
     decimal Amount,
     string? Note,

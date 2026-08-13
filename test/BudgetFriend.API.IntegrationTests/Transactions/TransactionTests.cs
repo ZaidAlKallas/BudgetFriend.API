@@ -2,13 +2,13 @@ using System.Net;
 using System.Net.Http.Json;
 using BudgetFriend.API.Database.Enums;
 using BudgetFriend.API.Features.Accounts;
-using BudgetFriend.API.Features.Accounts.Create;
 using BudgetFriend.API.Features.Authentication.Login;
 using BudgetFriend.API.Features.Authentication.Register;
 using BudgetFriend.API.Features.Categories.Create;
 using BudgetFriend.API.Features.Transactions;
 using BudgetFriend.API.Features.Transactions.Create;
 using BudgetFriend.API.Features.Transactions.Update;
+using BudgetFriend.API.Features.Accounts.Create;
 using BudgetFriend.API.IntegrationTests.CustomWebApplicationFactory;
 using FluentAssertions;
 
@@ -49,7 +49,7 @@ public sealed class TransactionTests(BudgetFriendApiFactory factory)
         var category = await CreateCategoryAsync(token, "Food", TransactionType.Expense);
         _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
 
-        var request = new CreateTransactionRequest(account.Id, category.Id, 50m, "Lunch", DateTime.UtcNow);
+        var request = new CreateTransactionRequest(account.Id, category.Id, 50m, TransactionType.Expense, "Lunch", DateTime.UtcNow);
 
         var response = await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, request);
 
@@ -64,7 +64,7 @@ public sealed class TransactionTests(BudgetFriendApiFactory factory)
         var category = await CreateCategoryAsync(token, "Salary", TransactionType.Income);
         _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
 
-        var request = new CreateTransactionRequest(account.Id, category.Id, 5000m, "Monthly salary", DateTime.UtcNow);
+        var request = new CreateTransactionRequest(account.Id, category.Id, 5000m, TransactionType.Income, "Monthly salary", DateTime.UtcNow);
 
         var response = await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, request);
         var content = await response.Content.ReadFromJsonAsync<CreateTransactionResponse>();
@@ -83,7 +83,7 @@ public sealed class TransactionTests(BudgetFriendApiFactory factory)
         var category = await CreateCategoryAsync(token, "Misc", TransactionType.Expense);
         _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
 
-        var request = new CreateTransactionRequest(Guid.NewGuid(), category.Id, 100m, null, DateTime.UtcNow);
+        var request = new CreateTransactionRequest(Guid.NewGuid(), category.Id, 100m, TransactionType.Expense, null, DateTime.UtcNow);
 
         var response = await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, request);
 
@@ -97,7 +97,7 @@ public sealed class TransactionTests(BudgetFriendApiFactory factory)
         var account = await CreateAccountAsync(token, "No Cat Account", 100m);
         _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
 
-        var request = new CreateTransactionRequest(account.Id, Guid.NewGuid(), 100m, null, DateTime.UtcNow);
+        var request = new CreateTransactionRequest(account.Id, Guid.NewGuid(), 100m, TransactionType.Expense, null, DateTime.UtcNow);
 
         var response = await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, request);
 
@@ -126,8 +126,8 @@ public sealed class TransactionTests(BudgetFriendApiFactory factory)
         var expenseCat = await CreateCategoryAsync(token, "Coffee", TransactionType.Expense);
         _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
 
-        await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, incomeCat.Id, 200m, null, DateTime.UtcNow));
-        await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, expenseCat.Id, 5m, null, DateTime.UtcNow));
+        await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, incomeCat.Id, 200m, TransactionType.Income, null, DateTime.UtcNow));
+        await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, expenseCat.Id, 5m, TransactionType.Expense, null, DateTime.UtcNow));
 
         var response = await _client.GetAsync(ApiRoutes.Transactions.Base);
         var content = await response.Content.ReadFromJsonAsync<List<GetTransactionResponse>>();
@@ -154,7 +154,7 @@ public sealed class TransactionTests(BudgetFriendApiFactory factory)
         var category = await CreateCategoryAsync(token, "Food", TransactionType.Expense);
         _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
 
-        var createResponse = await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, category.Id, 30m, "Snack", DateTime.UtcNow));
+        var createResponse = await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, category.Id, 30m, TransactionType.Expense, "Snack", DateTime.UtcNow));
         var created = await createResponse.Content.ReadFromJsonAsync<CreateTransactionResponse>();
 
         var updateRequest = new UpdateTransactionRequest(45m, "Updated snack", DateTime.UtcNow);
@@ -186,7 +186,7 @@ public sealed class TransactionTests(BudgetFriendApiFactory factory)
         var category = await CreateCategoryAsync(token, "Gas", TransactionType.Expense);
         _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
 
-        var createResponse = await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, category.Id, 40m, null, DateTime.UtcNow));
+        var createResponse = await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, category.Id, 40m, TransactionType.Expense, null, DateTime.UtcNow));
         var created = await createResponse.Content.ReadFromJsonAsync<CreateTransactionResponse>();
 
         var response = await _client.DeleteAsync(ApiRoutes.Transactions.ById(created!.Id));
@@ -233,10 +233,10 @@ public sealed class TransactionTests(BudgetFriendApiFactory factory)
         expenseCatResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var expenseCat = await expenseCatResponse.Content.ReadFromJsonAsync<CreateCategoryResponse>();
 
-        var incomeTxn = await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account!.Id, incomeCat!.Id, 5000m, "Salary", DateTime.UtcNow));
+        var incomeTxn = await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account!.Id, incomeCat!.Id, 5000m, TransactionType.Income, "Salary", DateTime.UtcNow));
         incomeTxn.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var expenseTxn = await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, expenseCat!.Id, 200m, "Groceries", DateTime.UtcNow));
+        var expenseTxn = await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, expenseCat!.Id, 200m, TransactionType.Expense, "Groceries", DateTime.UtcNow));
         expenseTxn.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var getTxns = await _client.GetAsync(ApiRoutes.Transactions.Base);

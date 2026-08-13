@@ -1,9 +1,3 @@
-using BudgetFriend.API.Database;
-using BudgetFriend.API.Database.Enums;
-using BudgetFriend.API.Features.Authentication;
-using BudgetFriend.API.Shared.Caching;
-using Microsoft.EntityFrameworkCore;
-
 namespace BudgetFriend.API.Features.Dashboards.GetDashboard;
 
 public static class GetDashboardEndpoint
@@ -42,8 +36,10 @@ public static class GetDashboardEndpoint
                 a.Id,
                 a.Name,
                 a.InitialBalance
-                    + a.Transactions.Where(t => t.Category.TransactionType == TransactionType.Income).Sum(t => t.Amount)
-                    - a.Transactions.Where(t => t.Category.TransactionType == TransactionType.Expense).Sum(t => t.Amount),
+                    + a.Transactions.Where(t => t.TransactionType == TransactionType.Income).Sum(t => t.Amount)
+                    - a.Transactions.Where(t => t.TransactionType == TransactionType.Expense).Sum(t => t.Amount)
+                    + a.Transactions.Where(t => t.TransactionType == TransactionType.TransferIn).Sum(t => t.Amount)
+                    - a.Transactions.Where(t => t.TransactionType == TransactionType.TransferOut).Sum(t => t.Amount),
                 a.Currency))
             .ToListAsync(cancellationToken);
 
@@ -53,16 +49,17 @@ public static class GetDashboardEndpoint
             .Select(g => new
             {
                 Currency = g.Key,
-                Income = g.Where(t => t.Category.TransactionType == TransactionType.Income).Sum(t => t.Amount),
-                Expense = g.Where(t => t.Category.TransactionType == TransactionType.Expense).Sum(t => t.Amount)
+                Income = g.Where(t => t.TransactionType == TransactionType.Income).Sum(t => t.Amount),
+                Expense = g.Where(t => t.TransactionType == TransactionType.Expense).Sum(t => t.Amount)
             })
             .ToListAsync(cancellationToken);
 
         var topCategoriesData = await dbContext.Transactions
             .Where(t => t.Account.UserId == userId
-                && t.Category.TransactionType == TransactionType.Expense
+                && t.Category != null
+                && t.TransactionType == TransactionType.Expense
                 && t.TransactionDate >= startOfMonth)
-            .GroupBy(t => new { t.CategoryId, t.Category.Name, t.Account.Currency })
+            .GroupBy(t => new { t.CategoryId, t.Category!.Name, t.Account.Currency })
             .Select(g => new
             {
                 g.Key.CategoryId,
@@ -76,7 +73,7 @@ public static class GetDashboardEndpoint
         var frequentExpenseCategories = topCategoriesData
             .GroupBy(x => new { x.CategoryId, x.Name })
             .Select(g => new CategoryOverview(
-                g.Key.CategoryId,
+                (Guid)g.Key.CategoryId!,
                 g.Key.Name,
                 [.. g.Select(x => new CategoryCurrencyBreakdown(x.Currency, x.TotalAmount, x.TransactionCount))]))
             .OrderByDescending(c => c.AmountsByCurrency.Sum(x => x.Count))
@@ -94,8 +91,8 @@ public static class GetDashboardEndpoint
                 t.Account.Name,
                 t.Account.Currency,
                 t.CategoryId,
-                t.Category.Name,
-                t.Category.TransactionType,
+                t.Category != null ? t.Category.Name : null,
+                t.TransactionType,
                 t.Amount,
                 t.Note,
                 t.TransactionDate))

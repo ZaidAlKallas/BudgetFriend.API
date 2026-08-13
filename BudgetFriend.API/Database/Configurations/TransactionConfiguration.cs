@@ -1,5 +1,3 @@
-using BudgetFriend.API.Database.Entites;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace BudgetFriend.Api.Database.Configurations;
@@ -19,6 +17,9 @@ public sealed class TransactionConfiguration : IEntityTypeConfiguration<Transact
         builder.Property(x => x.TransactionDate)
             .IsRequired();
 
+        builder.Property(x => x.TransactionType)
+            .HasConversion<int>();
+
         builder.Property(x => x.CreatedAtUtc)
             .IsRequired();
 
@@ -30,6 +31,7 @@ public sealed class TransactionConfiguration : IEntityTypeConfiguration<Transact
         builder.HasOne(x => x.Category)
             .WithMany(x => x.Transactions)
             .HasForeignKey(x => x.CategoryId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(x => x.AccountId);

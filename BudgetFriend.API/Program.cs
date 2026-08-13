@@ -1,11 +1,9 @@
-using BudgetFriend.API.Database.Entites;
 using BudgetFriend.API.Features.Accounts;
-using BudgetFriend.API.Features.Authentication;
 using BudgetFriend.API.Features.Authentication.Register;
 using BudgetFriend.API.Features.Categories;
 using BudgetFriend.API.Features.Dashboards;
 using BudgetFriend.API.Features.Transactions;
-using BudgetFriend.API.Shared.Caching;
+using BudgetFriend.API.Features.Transfers;
 using BudgetFriend.API.Shared.Extensions;
 using FluentValidation;
 using HealthChecks.UI.Client;
@@ -57,6 +55,7 @@ app.MapAuthenticationEndpoints();
 app.MapAccountEndpoints();
 app.MapCategoryEndpoints();
 app.MapTransactionEndpoints();
+app.MapTransferEndpoints();
 app.MapDashboardEndpoints();
 app.MapHealthChecks("/_health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
 {
