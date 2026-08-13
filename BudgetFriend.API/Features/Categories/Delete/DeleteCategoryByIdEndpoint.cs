@@ -8,7 +8,8 @@ public static class DeleteCategoryByIdEndpoint
             .WithSummary("Delete a category by its ID")
             .WithDescription("Deletes a category associated with the specified ID")
             .Produces(StatusCodes.Status204NoContent)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
     public static async Task<IResult> HandleAsync(
         Guid categoryId,
@@ -18,12 +19,21 @@ public static class DeleteCategoryByIdEndpoint
         ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
-        var deletedRows = await dbContext.Categories
-            .Where(c => c.UserId == currentUser.UserId && c.Id == categoryId)
-            .ExecuteDeleteAsync(cancellationToken);
+        var categoryExists = await dbContext.Categories
+            .AnyAsync(c => c.Id == categoryId && c.UserId == currentUser.UserId, cancellationToken);
 
-        if (deletedRows == 0)
+        if (!categoryExists)
             return Results.NotFound();
+
+        var isUsedByTransactions = await dbContext.Transactions
+            .AnyAsync(t => t.CategoryId == categoryId, cancellationToken);
+
+        if (isUsedByTransactions)
+            return Results.Conflict(new { message = "Category cannot be deleted because it is used by existing transactions." });
+
+        await dbContext.Categories
+            .Where(c => c.Id == categoryId)
+            .ExecuteDeleteAsync(cancellationToken);
 
         await CacheInvalidation.InvalidateFinancialDataAsync(cacheService, currentUser.UserId, cancellationToken);
 

@@ -60,23 +60,33 @@ public sealed class CreateTransactionValidatorTests
     }
 
     [Fact]
-    public void Validate_ShouldNotHaveError_WhenCategoryIdIsNull_ForTransferInTransaction()
+    public void Validate_ShouldHaveError_WhenTransactionTypeIsTransferIn()
     {
-        var request = new CreateTransactionRequest(Guid.NewGuid(), null, 100m, TransactionType.TransferIn, null, null);
+        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 100m, TransactionType.TransferIn, null, null);
 
         var result = _sut.TestValidate(request);
 
-        result.ShouldNotHaveValidationErrorFor(x => x.CategoryId);
+        result.ShouldHaveValidationErrorFor(x => x.TransactionType);
     }
 
     [Fact]
-    public void Validate_ShouldNotHaveError_WhenCategoryIdIsNull_ForTransferOutTransaction()
+    public void Validate_ShouldHaveError_WhenTransactionTypeIsTransferOut()
     {
-        var request = new CreateTransactionRequest(Guid.NewGuid(), null, 100m, TransactionType.TransferOut, null, null);
+        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 100m, TransactionType.TransferOut, null, null);
 
         var result = _sut.TestValidate(request);
 
-        result.ShouldNotHaveValidationErrorFor(x => x.CategoryId);
+        result.ShouldHaveValidationErrorFor(x => x.TransactionType);
+    }
+
+    [Fact]
+    public void Validate_ShouldHaveError_WhenTransactionTypeIsNotInEnum()
+    {
+        var request = new CreateTransactionRequest(Guid.NewGuid(), Guid.NewGuid(), 100m, (TransactionType)999, null, null);
+
+        var result = _sut.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.TransactionType);
     }
 
     [Fact]

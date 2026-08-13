@@ -41,6 +41,7 @@ public static class LoginEndpoint
 
         if (user is null)
         {
+            await Task.Delay(Random.Shared.Next(50, 200), cancellationToken);
             logger.LogWarning("Failed login attempt for {Email}: user not found", request.Email);
             return Results.Unauthorized();
         }

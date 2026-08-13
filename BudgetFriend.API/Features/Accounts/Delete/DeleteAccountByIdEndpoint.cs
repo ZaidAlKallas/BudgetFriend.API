@@ -8,7 +8,8 @@ public static class DeleteAccountByIdEndpoint
             .WithSummary("Delete an account by its ID")
             .WithDescription("Deletes an account associated with the specified ID")
             .Produces(StatusCodes.Status204NoContent)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
     public static async Task<IResult> HandleAsync(
         Guid accountId,
@@ -17,12 +18,24 @@ public static class DeleteAccountByIdEndpoint
         ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
-        var deletedRows = await dbContext.Accounts
-            .Where(a => a.UserId == currentUser.UserId && a.Id == accountId)
-            .ExecuteDeleteAsync(cancellationToken);
+        var accountExists = await dbContext.Accounts
+            .AnyAsync(a => a.Id == accountId && a.UserId == currentUser.UserId, cancellationToken);
 
-        if (deletedRows == 0)
+        if (!accountExists)
             return Results.NotFound();
+
+        var hasTransactions = await dbContext.Transactions
+            .AnyAsync(t => t.AccountId == accountId, cancellationToken);
+
+        var hasTransfers = await dbContext.Transfers
+            .AnyAsync(t => t.FromAccountId == accountId || t.ToAccountId == accountId, cancellationToken);
+
+        if (hasTransactions || hasTransfers)
+            return Results.Conflict(new { message = "Account cannot be deleted because it has associated transactions or transfers." });
+
+        await dbContext.Accounts
+            .Where(a => a.Id == accountId)
+            .ExecuteDeleteAsync(cancellationToken);
 
         logger.LogInformation("Account {AccountId} deleted by user {UserId}", accountId, currentUser.UserId);
         return Results.NoContent();

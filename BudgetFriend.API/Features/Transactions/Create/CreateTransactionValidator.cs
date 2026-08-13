@@ -9,12 +9,14 @@ public sealed class CreateTransactionValidator : AbstractValidator<CreateTransac
         RuleFor(x => x.AccountId)
             .NotEmpty();
 
-        When(x => x.TransactionType is TransactionType.Income or TransactionType.Expense, () =>
-        {
-            RuleFor(x => x.CategoryId)
-                .NotNull()
-                .NotEqual(Guid.Empty);
-        });
+        RuleFor(x => x.CategoryId)
+            .NotEmpty()
+            .NotEqual(Guid.Empty);
+
+        RuleFor(x => x.TransactionType)
+            .IsInEnum()
+            .Must(t => t is TransactionType.Income or TransactionType.Expense)
+            .WithMessage("Only Income and Expense transaction types are allowed.");
 
         RuleFor(x => x.Amount)
             .NotEqual(0)
