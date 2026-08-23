@@ -79,7 +79,7 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
         });
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _container.StartAsync();
 
