@@ -219,6 +219,6 @@ dotnet test
 
 ---
 
-## Architecture
+## TECHNICAL
 
-More detailed documentation for architecture design:  [Architecture](ARCHITECTURE.md)
+For more details on the technical design, see the [Technical Design](TECHNICAL.md).
