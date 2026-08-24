@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\BudgetFriend.API\BudgetFriend.API.csproj" />
+    <ProjectReference Include="..\..\src\BudgetFriend.API.csproj" />
   </ItemGroup>
 
   <ItemGroup>

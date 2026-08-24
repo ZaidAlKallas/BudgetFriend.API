@@ -5,7 +5,7 @@
     <File Path="README.md" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="BudgetFriend.API/BudgetFriend.API.csproj" />
+    <Project Path="src/BudgetFriend.API.csproj" />
   </Folder>
   <Folder Name="/test/">
     <Project Path="test/BudgetFriend.API.IntegrationTests/BudgetFriend.API.IntegrationTests.csproj" />
