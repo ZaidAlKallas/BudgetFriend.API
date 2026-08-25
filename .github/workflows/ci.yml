@@ -25,7 +25,7 @@ jobs:
         run: dotnet build --no-restore -c Release
 
       - name: Run unit tests
-        run: dotnet test test/BudgetFriend.API.UnitTests --no-build --no-restore -c Release --logger "trx" --collect:"XPlat Code Coverage"
+        run: dotnet test test/BudgetFriend.API.UnitTests -c Release
 
       - name: Run integration tests
-        run: dotnet test test/BudgetFriend.API.IntegrationTests --no-build --no-restore -c Release --logger "trx" --collect:"XPlat Code Coverage"
+        run: dotnet test test/BudgetFriend.API.IntegrationTests -c Release
