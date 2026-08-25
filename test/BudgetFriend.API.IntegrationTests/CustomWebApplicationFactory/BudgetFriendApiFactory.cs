@@ -17,7 +17,7 @@ namespace BudgetFriend.API.IntegrationTests.CustomWebApplicationFactory;
 
 public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:16-alpine")
         .WithImage("postgres:16-alpine")
         .WithCleanUp(true)
         .Build();
@@ -79,7 +79,7 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
         });
     }
 
-    public async Task InitializeAsync()
+    public async ValueTask InitializeAsync()
     {
         await _container.StartAsync();
 
@@ -88,8 +88,5 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
         await db.Database.MigrateAsync();
     }
 
-    public new async Task DisposeAsync()
-    {
-        await _container.DisposeAsync();
-    }
+    public new async Task DisposeAsync() => await _container.DisposeAsync();
 }

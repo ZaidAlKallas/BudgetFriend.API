@@ -1,4 +1,4 @@
-using BudgetFriend.API.Database.Entites;
+using BudgetFriend.API.Database.Entities;
 using BudgetFriend.API.Features.Authentication.Jwt;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
