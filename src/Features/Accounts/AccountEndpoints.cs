@@ -2,6 +2,7 @@ using BudgetFriend.API.Features.Accounts.Create;
 using BudgetFriend.API.Features.Accounts.Delete;
 using BudgetFriend.API.Features.Accounts.GetAll;
 using BudgetFriend.API.Features.Accounts.GetById;
+using BudgetFriend.API.Features.Accounts.GetTransactions;
 using BudgetFriend.API.Features.Accounts.Update;
 
 namespace BudgetFriend.API.Features.Accounts;
@@ -18,6 +19,7 @@ public static class AccountEndpoints
         group.MapCreateAccount();
         group.MapGetAllAccounts();
         group.MapGetAccountById();
+        group.MapGetAccountTransactions();
         group.MapUpdateAccount();
         group.MapDeleteAccount();
 
