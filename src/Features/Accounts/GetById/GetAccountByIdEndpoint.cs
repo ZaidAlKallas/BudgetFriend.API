@@ -22,6 +22,11 @@ public static class GetAccountByIdEndpoint
                 a.Id,
                 a.Name,
                 a.InitialBalance,
+                a.Transactions.Sum(t =>
+                    t.TransactionType == TransactionType.Income ||
+                    t.TransactionType == TransactionType.TransferIn
+                        ? t.Amount
+                        : -t.Amount) + a.InitialBalance,
                 a.Currency))
             .FirstOrDefaultAsync(cancellationToken);
         return account is not null ? Results.Ok(account) : Results.NotFound();

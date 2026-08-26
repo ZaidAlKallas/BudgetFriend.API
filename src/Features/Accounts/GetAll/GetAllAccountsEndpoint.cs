@@ -21,6 +21,11 @@ public static class GetAllAccountsEndpoint
                 a.Id,
                 a.Name,
                 a.InitialBalance,
+                a.Transactions.Sum(t =>
+                    t.TransactionType == TransactionType.Income ||
+                    t.TransactionType == TransactionType.TransferIn
+                        ? t.Amount
+                        : -t.Amount) + a.InitialBalance,
                 a.Currency))
             .ToListAsync(cancellationToken);
         return Results.Ok(accounts);
