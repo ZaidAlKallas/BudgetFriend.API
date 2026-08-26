@@ -10,6 +10,7 @@ using BudgetFriend.API.Features.Transactions.Create;
 using BudgetFriend.API.Features.Transactions.Update;
 using BudgetFriend.API.Features.Accounts.Create;
 using BudgetFriend.API.IntegrationTests.CustomWebApplicationFactory;
+using BudgetFriend.API.Shared.Pagination;
 using FluentAssertions;
 
 namespace BudgetFriend.API.IntegrationTests.Transactions;
@@ -111,10 +112,12 @@ public sealed class TransactionTests(BudgetFriendApiFactory factory)
         _client.DefaultRequestHeaders.Authorization = new("Bearer", token);
 
         var response = await _client.GetAsync(ApiRoutes.Transactions.Base);
-        var content = await response.Content.ReadFromJsonAsync<List<GetTransactionResponse>>();
+        var content = await response.Content.ReadFromJsonAsync<PaginatedResult<GetTransactionResponse>>();
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        content.Should().BeEmpty();
+        content.Should().NotBeNull();
+        content!.Items.Should().BeEmpty();
+        content.TotalCount.Should().Be(0);
     }
 
     [Fact]
@@ -130,9 +133,11 @@ public sealed class TransactionTests(BudgetFriendApiFactory factory)
         await _client.PostAsJsonAsync(ApiRoutes.Transactions.Base, new CreateTransactionRequest(account.Id, expenseCat.Id, 5m, TransactionType.Expense, null, DateTime.UtcNow));
 
         var response = await _client.GetAsync(ApiRoutes.Transactions.Base);
-        var content = await response.Content.ReadFromJsonAsync<List<GetTransactionResponse>>();
+        var content = await response.Content.ReadFromJsonAsync<PaginatedResult<GetTransactionResponse>>();
 
-        content.Should().HaveCount(2);
+        content.Should().NotBeNull();
+        content!.Items.Should().HaveCount(2);
+        content.TotalCount.Should().Be(2);
     }
 
     [Fact]
@@ -240,7 +245,8 @@ public sealed class TransactionTests(BudgetFriendApiFactory factory)
         expenseTxn.StatusCode.Should().Be(HttpStatusCode.Created);
 
         var getTxns = await _client.GetAsync(ApiRoutes.Transactions.Base);
-        var txns = await getTxns.Content.ReadFromJsonAsync<List<GetTransactionResponse>>();
-        txns.Should().HaveCount(2);
+        var txns = await getTxns.Content.ReadFromJsonAsync<PaginatedResult<GetTransactionResponse>>();
+        txns.Should().NotBeNull();
+        txns!.Items.Should().HaveCount(2);
     }
 }
