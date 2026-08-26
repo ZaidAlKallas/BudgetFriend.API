@@ -8,4 +8,6 @@ public sealed record CurrencySummary(
     decimal InitialBalance,
     decimal TotalIncome,
     decimal TotalExpenses,
+    decimal TransferIn,
+    decimal TransferOut,
     decimal NetAmount);

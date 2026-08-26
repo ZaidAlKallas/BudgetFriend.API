@@ -45,7 +45,9 @@ public static class GetSummaryEndpoint
             {
                 Currency = g.Key,
                 Income = g.Where(t => t.TransactionType == TransactionType.Income).Sum(t => t.Amount),
-                Expense = g.Where(t => t.TransactionType == TransactionType.Expense).Sum(t => t.Amount)
+                Expense = g.Where(t => t.TransactionType == TransactionType.Expense).Sum(t => t.Amount),
+                TransferIn = g.Where(t => t.TransactionType == TransactionType.TransferIn).Sum(t => t.Amount),
+                TransferOut = g.Where(t => t.TransactionType == TransactionType.TransferOut).Sum(t => t.Amount)
             })
             .ToListAsync(cancellationToken);
 
@@ -57,7 +59,10 @@ public static class GetSummaryEndpoint
                 var tx = txByCurrency.GetValueOrDefault(ac.Currency);
                 var inc = tx?.Income ?? 0m;
                 var exp = tx?.Expense ?? 0m;
-                return new CurrencySummary(ac.Currency, ac.InitialBalance, inc, exp, inc - exp);
+                var transferIn = tx?.TransferIn ?? 0m;
+                var transferOut = tx?.TransferOut ?? 0m;
+                var net = inc - exp + transferIn - transferOut + ac.InitialBalance;
+                return new CurrencySummary(ac.Currency, ac.InitialBalance, inc, exp, transferIn, transferOut, net);
             })
             .ToList();
 
