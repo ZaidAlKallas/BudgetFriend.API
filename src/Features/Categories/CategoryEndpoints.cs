@@ -10,7 +10,7 @@ public static class CategoryEndpoints
 {
     public static WebApplication MapCategoryEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/categories")
+        var group = app.MapGroup("/api/v{version:apiVersion}/categories")
             .RequireAuthorization()
             .WithTags("Categories")
             .ProducesProblem(StatusCodes.Status401Unauthorized);

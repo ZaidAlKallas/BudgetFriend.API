@@ -11,7 +11,7 @@ public static class AccountEndpoints
 {
     public static WebApplication MapAccountEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/accounts")
+        var group = app.MapGroup("/api/v{version:apiVersion}/accounts")
             .RequireAuthorization()
             .WithTags("Accounts")
             .ProducesProblem(StatusCodes.Status401Unauthorized);

@@ -4,7 +4,7 @@ public static class ApiRoutes
 {
     public static class Auth
     {
-        private const string _prefix = "/api/auth";
+        private const string _prefix = "/api/v1/auth";
         public const string Register = _prefix + "/register";
         public const string Login = _prefix + "/login";
         public const string Refresh = _prefix + "/refresh";
@@ -14,32 +14,32 @@ public static class ApiRoutes
 
     public static class Accounts
     {
-        public const string Base = "/api/accounts";
+        public const string Base = "/api/v1/accounts";
         public static string ById(Guid id) => $"{Base}/{id}";
     }
 
     public static class Categories
     {
-        public const string Base = "/api/categories";
+        public const string Base = "/api/v1/categories";
         public static string ById(Guid id) => $"{Base}/{id}";
     }
 
     public static class Transactions
     {
-        public const string Base = "/api/transactions";
+        public const string Base = "/api/v1/transactions";
         public static string ById(Guid id) => $"{Base}/{id}";
     }
 
     public static class Dashboard
     {
-        public const string Base = "/api/dashboard";
-        public const string Summary = "/api/dashboard/summary";
-        public const string CategoriesAnalysis = "/api/dashboard/categories-analysis";
+        public const string Base = "/api/v1/dashboard";
+        public static string Summary = "/api/v1/dashboard/summary";
+        public static string CategoriesAnalysis = "/api/v1/dashboard/categories-analysis";
     }
 
     public static class Transfers
     {
-        public const string Base = "/api/transfers";
+        public const string Base = "/api/v1/transfers";
         public static string ById(Guid id) => $"{Base}/{id}";
     }
 }

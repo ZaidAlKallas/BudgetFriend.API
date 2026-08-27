@@ -9,7 +9,7 @@ public static class TransferEndpoints
 {
     public static WebApplication MapTransferEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/transfers")
+        var group = app.MapGroup("/api/v{version:apiVersion}/transfers")
             .RequireAuthorization()
             .WithTags("Transfers")
             .ProducesProblem(StatusCodes.Status401Unauthorized);

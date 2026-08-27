@@ -61,7 +61,7 @@ public static class GetSummaryEndpoint
                 var exp = tx?.Expense ?? 0m;
                 var transferIn = tx?.TransferIn ?? 0m;
                 var transferOut = tx?.TransferOut ?? 0m;
-                var net = inc - exp + transferIn - transferOut + ac.InitialBalance;
+                var net = inc - exp + transferIn - transferOut;
                 return new CurrencySummary(ac.Currency, ac.InitialBalance, inc, exp, transferIn, transferOut, net);
             })
             .ToList();
