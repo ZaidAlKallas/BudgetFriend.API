@@ -10,7 +10,7 @@ public static class TransactionEndpoints
 {
     public static WebApplication MapTransactionEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/transactions")
+        var group = app.MapGroup("/api/v{version:apiVersion}/transactions")
             .RequireAuthorization()
             .WithTags("Transactions")
             .ProducesProblem(StatusCodes.Status401Unauthorized);

@@ -4,6 +4,7 @@ public sealed record GetAccountResponse(
     Guid Id,
     string Name,
     decimal InitialBalance,
+    decimal CurrentBalance,
     Currency Currency);
 
 

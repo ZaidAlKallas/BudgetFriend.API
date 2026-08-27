@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using BudgetFriend.API.Features.Authentication.Jwt;
 using BudgetFriend.API.Features.Authentication.RefreshToken;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -94,6 +95,19 @@ public static class ServiceCollectionExtensions
         services.AddHealthChecks()
             .AddNpgSql(configuration.GetConnectionString("Database")!)
             .AddRedis(configuration.GetConnectionString("Redis")!);
+
+        return services;
+    }
+
+    public static IServiceCollection AddCustomApiVersioning(this IServiceCollection services)
+    {
+        services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+            options.ApiVersionReader = new UrlSegmentApiVersionReader();
+        });
 
         return services;
     }

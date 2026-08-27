@@ -11,7 +11,7 @@ public static class AuthenticationEndpoints
     {
         public WebApplication MapAuthenticationEndpoints()
         {
-            var group = app.MapGroup("/api/auth")
+            var group = app.MapGroup("/api/v{version:apiVersion}/auth")
                 .WithTags("Authentication");
 
             group.MapRegisterEndpoint();

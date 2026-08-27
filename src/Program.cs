@@ -47,6 +47,8 @@ builder.Services.AddScoped<ICacheService, RedisCacheService>();
 builder.Services.AddProblemDetails();
 
 
+builder.Services.AddCustomApiVersioning();
+
 var app = builder.Build();
 
 await app.ConfigurePipeline();
