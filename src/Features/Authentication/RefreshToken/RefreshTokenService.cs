@@ -1,5 +1,4 @@
 using System.Security.Cryptography;
-using System.Text;
 
 namespace BudgetFriend.API.Features.Authentication.RefreshToken;
 
@@ -66,8 +65,5 @@ internal sealed class RefreshTokenService(AppDbContext dbContext) : IRefreshToke
     }
 
     private static string HashToken(string token)
-    {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(token));
-        return Convert.ToHexString(bytes).ToLowerInvariant();
-    }
+        => SecurityTokens.Hash(token);
 }
