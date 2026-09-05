@@ -36,6 +36,10 @@ builder.Services.AddAuthServices(builder.Configuration);
 
 builder.Services.AddLoginRateLimiting();
 
+builder.Services.AddEmailing(builder.Configuration);
+
+builder.Services.AddGoogleAuth(builder.Configuration);
+
 builder.Services.AddHttpContextAccessor()
     .AddScoped<ICurrentUser, CurrentUser>();
 

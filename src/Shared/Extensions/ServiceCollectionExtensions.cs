@@ -1,8 +1,12 @@
 using Asp.Versioning;
+using BudgetFriend.API.Features.Authentication.Google;
 using BudgetFriend.API.Features.Authentication.Jwt;
 using BudgetFriend.API.Features.Authentication.RefreshToken;
+using BudgetFriend.API.Shared.Email;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 using System.Text;
@@ -85,7 +89,44 @@ public static class ServiceCollectionExtensions
                 opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                 opt.QueueLimit = 0;
             });
+
+            options.AddFixedWindowLimiter("EmailPolicy", opt =>
+            {
+                opt.PermitLimit = 5;
+                opt.Window = TimeSpan.FromMinutes(10);
+                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                opt.QueueLimit = 0;
+            });
         });
+        return services;
+    }
+
+    public static IServiceCollection AddEmailing(this IServiceCollection services,
+        ConfigurationManager configuration)
+    {
+        services.Configure<EmailOptions>(configuration.GetSection(EmailOptions.SectionName));
+
+        if (configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>()?.UseConsoleEmailSender ?? true)
+            services.AddScoped<IEmailSender, ConsoleEmailSender>();
+        else
+            services.AddScoped<IEmailSender, SmtpEmailSender>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddGoogleAuth(this IServiceCollection services,
+        ConfigurationManager configuration)
+    {
+        services.Configure<GoogleOptions>(configuration.GetSection(GoogleOptions.SectionName));
+
+        services.AddSingleton(new ConfigurationManager<OpenIdConnectConfiguration>(
+            "https://accounts.google.com/.well-known/openid-configuration",
+            new OpenIdConnectConfigurationRetriever(),
+            new HttpDocumentRetriever { RequireHttps = true }));
+
+        services.AddScoped<IGoogleIdTokenValidator, GoogleIdTokenValidator>();
+        services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+
         return services;
     }
 
