@@ -30,6 +30,24 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.IsEmailVerified)
             .IsRequired();
 
+        builder.Property(x => x.EmailVerifiedAtUtc);
+
+        builder.Property(x => x.EmailVerificationTokenHash)
+            .HasMaxLength(256);
+
+        builder.Property(x => x.EmailVerificationExpiresAtUtc);
+
+        builder.Property(x => x.PasswordResetTokenHash)
+            .HasMaxLength(256);
+
+        builder.Property(x => x.PasswordResetExpiresAtUtc);
+
+        builder.Property(x => x.GoogleSubject)
+            .HasMaxLength(128);
+
+        builder.HasIndex(x => x.GoogleSubject)
+            .IsUnique();
+
         builder.HasIndex(x => x.NormalizedEmail)
             .IsUnique();
     }

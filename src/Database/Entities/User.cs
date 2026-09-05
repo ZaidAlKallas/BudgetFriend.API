@@ -10,6 +10,18 @@ public sealed class User
 
     public bool IsEmailVerified { get; set; }
 
+    public DateTime? EmailVerifiedAtUtc { get; set; }
+
+    public string? EmailVerificationTokenHash { get; set; }
+
+    public DateTime? EmailVerificationExpiresAtUtc { get; set; }
+
+    public string? PasswordResetTokenHash { get; set; }
+
+    public DateTime? PasswordResetExpiresAtUtc { get; set; }
+
+    public string? GoogleSubject { get; set; }
+
     public string? PasswordHash { get; set; }
 
     public string? FirstName { get; set; }
