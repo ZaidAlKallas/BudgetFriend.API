@@ -25,6 +25,7 @@ services:
 
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      Jwt__SecretKey: ${JWT_SECRET}
 
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=budgetfriend_db;Username=postgres;Password=postgres
       ConnectionStrings__Redis: redis:6379
