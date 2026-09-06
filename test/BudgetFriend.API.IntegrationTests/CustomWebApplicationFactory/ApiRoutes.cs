@@ -10,6 +10,11 @@ public static class ApiRoutes
         public const string Refresh = _prefix + "/refresh";
         public const string Logout = _prefix + "/logout";
         public const string Profile = _prefix + "/profile";
+        public const string VerifyEmail = _prefix + "/verify-email";
+        public const string ResendVerification = _prefix + "/resend-verification";
+        public const string Google = _prefix + "/google";
+        public const string ForgotPassword = _prefix + "/forgot-password";
+        public const string ResetPassword = _prefix + "/reset-password";
     }
 
     public static class Accounts

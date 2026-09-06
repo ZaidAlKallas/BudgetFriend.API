@@ -1,5 +1,8 @@
+using BudgetFriend.API.Features.Authentication.EmailVerification;
+using BudgetFriend.API.Features.Authentication.Google;
 using BudgetFriend.API.Features.Authentication.Login;
 using BudgetFriend.API.Features.Authentication.Logout;
+using BudgetFriend.API.Features.Authentication.PasswordReset;
 using BudgetFriend.API.Features.Authentication.Refresh;
 using BudgetFriend.API.Features.Authentication.Register;
 
@@ -19,6 +22,11 @@ public static class AuthenticationEndpoints
             group.MapRefreshEndpoint();
             group.MapLogoutEndpoint();
             group.MapProfileEndpoint();
+            group.MapVerifyEmailEndpoint();
+            group.MapResendVerificationEndpoint();
+            group.MapGoogleLoginEndpoint();
+            group.MapForgotPasswordEndpoint();
+            group.MapResetPasswordEndpoint();
 
             return app;
         }

@@ -1,4 +1,6 @@
+using BudgetFriend.API.Shared.Email;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace BudgetFriend.API.Features.Authentication.Register;
 
@@ -21,6 +23,8 @@ public static partial class RegisterEndpoint
         RegisterRequest request,
         AppDbContext dbContext,
         IPasswordHasher<User> passwordHasher,
+        IEmailSender emailSender,
+        IOptions<EmailOptions> emailOptions,
         ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
@@ -52,8 +56,25 @@ public static partial class RegisterEndpoint
 
         user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
 
+        var verificationToken = SecurityTokens.Generate();
+        user.EmailVerificationTokenHash = SecurityTokens.Hash(verificationToken);
+        user.EmailVerificationExpiresAtUtc = DateTime.UtcNow.AddHours(24);
+
         dbContext.Users.Add(user);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await emailSender.SendAsync(
+                user.Email,
+                "Verify your email",
+                AuthEmailBuilder.BuildVerificationMessage(emailOptions, verificationToken),
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to send verification email to {Email}", user.Email);
+        }
 
         return Results.Created();
     }

@@ -1,4 +1,6 @@
 using BudgetFriend.API.Database;
+using BudgetFriend.API.Features.Authentication.Google;
+using BudgetFriend.API.Shared.Email;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -37,6 +39,8 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
                 ["Jwt:Audience"] = "TestAudience",
                 ["Jwt:SecretKey"] = "test-secret-key-that-is-at-least-32-characters!",
                 ["Jwt:ExpirationMinutes"] = "60",
+                ["Email:BaseUrl"] = "https://test.local",
+                ["Google:ClientId"] = "test-client-id",
                 ["Serilog:MinimumLevel:Default"] = "Fatal",
                 ["Serilog:WriteTo:0:Name"] = "Console",
                 ["Serilog:WriteTo:0:Args:restrictedToMinimumLevel"] = "Fatal"
@@ -57,6 +61,12 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
 
             services.RemoveAll<IConnectionMultiplexer>();
 
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<IEmailSender, TestEmailSender>();
+
+            services.RemoveAll<IGoogleIdTokenValidator>();
+            services.AddSingleton<IGoogleIdTokenValidator, FakeGoogleIdTokenValidator>();
+
             services.Configure<RateLimiterOptions>(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -72,6 +82,13 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
                 {
                     opt.PermitLimit = 1000;
                     opt.Window = TimeSpan.FromMinutes(1);
+                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    opt.QueueLimit = 0;
+                });
+                options.AddFixedWindowLimiter("EmailPolicy", opt =>
+                {
+                    opt.PermitLimit = 1000;
+                    opt.Window = TimeSpan.FromMinutes(10);
                     opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     opt.QueueLimit = 0;
                 });
