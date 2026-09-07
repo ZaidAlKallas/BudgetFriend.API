@@ -186,6 +186,7 @@ public static class ServiceCollectionExtensions
             .WithMetrics(metrics => metrics
                 .AddAspNetCoreInstrumentation()
                 .AddMeter("System.Runtime")
+                .AddMeter(BudgetFriendMetrics.MeterName)
                 .AddOtlpExporter());
 
         return services;

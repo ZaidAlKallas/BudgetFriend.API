@@ -75,6 +75,8 @@ public static class CreateTransferEndpoint
         dbContext.Transfers.Add(transfer);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        BudgetFriendMetrics.TransfersCreated.Add(1);
+
         await CacheInvalidation.InvalidateFinancialDataAsync(cacheService, currentUser.UserId, cancellationToken);
 
         logger.LogInformation(

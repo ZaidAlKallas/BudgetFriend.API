@@ -37,6 +37,8 @@ public static class CreateAccountEndpoint
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        BudgetFriendMetrics.AccountsCreated.Add(1);
+
         logger.LogInformation("Account {AccountId} created for user {UserId}", account.Id, currentUser.UserId);
 
         return Results.Created(

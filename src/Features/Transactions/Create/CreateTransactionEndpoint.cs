@@ -47,6 +47,8 @@ public static class CreateTransactionEndpoint
         dbContext.Transactions.Add(transaction);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        BudgetFriendMetrics.TransactionsCreated.Add(1);
+
         await CacheInvalidation.InvalidateFinancialDataAsync(cacheService, currentUser.UserId, cancellationToken);
 
         logger.LogInformation(
