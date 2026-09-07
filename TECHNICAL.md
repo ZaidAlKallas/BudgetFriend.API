@@ -453,9 +453,22 @@ The application contains infrastructure for concerns that affect multiple featur
 - Validation
 - Error handling
 - Logging
+- Observability
 - Caching
 - Rate limiting
 - Health checks
+
+### Observability — OpenTelemetry
+
+OpenTelemetry provides distributed traces and metrics:
+
+- ASP.NET Core instrumentation for incoming HTTP requests
+- HttpClient instrumentation for outgoing HTTP calls
+- ASP.NET Core HTTP metrics and .NET runtime metrics
+- A small set of BudgetFriend business metrics (`budgetfriend.*`)
+- OTLP export, configured through the standard `OTEL_EXPORTER_OTLP_ENDPOINT` setting
+
+Serilog remains the logging system. Log events are enriched with `TraceId` and `SpanId` so application logs can be correlated with OpenTelemetry traces. No second logging framework is used.
 
 These concerns are kept separate from individual feature implementations where appropriate.
 
@@ -489,6 +502,7 @@ The development environment includes supporting services such as:
 
 - PostgreSQL
 - Redis
+- Aspire Dashboard (standalone, for local telemetry viewing)
 
 This allows the API to be developed without requiring these services to be installed directly on the host machine.
 

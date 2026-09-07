@@ -177,6 +177,7 @@ The project is developed incrementally. New infrastructure and architectural dec
 - JWT Authentication & Refresh Tokens
 - FluentValidation
 - Serilog
+- OpenTelemetry
 - Docker
 - GitHub Actions
 - xUnit
@@ -216,6 +217,52 @@ docker compose up -d
 dotnet run --project src/BudgetFriend.API
 dotnet test
 ```
+
+---
+
+## Observability
+
+BudgetFriend uses OpenTelemetry for distributed traces and metrics, while Serilog remains the primary application logging system.
+
+- **Traces** — incoming HTTP requests and outgoing HTTP client calls are captured automatically.
+- **Metrics** — ASP.NET Core HTTP metrics, .NET runtime metrics, and a small set of custom business metrics (`budgetfriend.accounts.created`, `budgetfriend.transactions.created`, `budgetfriend.transfers.created`).
+- **Logs** — application logs stay in Serilog. Each request enriches log events with `TraceId` and `SpanId` so logs can be correlated with OpenTelemetry traces.
+- **Export** — traces and metrics are exported with the OpenTelemetry Protocol (OTLP). The endpoint is configured with the standard `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable; the default protocol is `http/protobuf`.
+
+### Aspire Dashboard (local)
+
+A standalone Aspire Dashboard is included in `docker-compose.yml` for local development. It receives telemetry over OTLP, so changing the observability backend does not require application code changes.
+
+Start the local infrastructure:
+
+```bash
+docker compose up -d
+```
+
+The dashboard UI is available at:
+
+```text
+http://localhost:18888
+```
+
+The dashboard also publishes two OTLP endpoints for exports:
+
+```text
+http://localhost:4317 (OTLP/gRPC)
+http://localhost:4318 (OTLP/HTTP)
+```
+
+In the Development environment the API exports to `http://localhost:4318` by default (see `src/appsettings.Development.json`). To point the API at another OTLP backend, set the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable; no application code changes are required.
+
+### What you can expect to see
+
+- HTTP requests and their durations
+- Outgoing HTTP calls
+- ASP.NET Core and .NET runtime metrics
+- BudgetFriend business metrics
+- Serilog application logs correlated with traces by `TraceId` / `SpanId`
+
+The API does not depend on the dashboard: if the OTLP endpoint is unreachable, the API continues to run normally.
 
 ---
 
