@@ -50,6 +50,7 @@ builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
 builder.Services.AddProblemDetails();
 
+builder.Services.AddObservability(builder.Configuration);
 
 builder.Services.AddCustomApiVersioning();
 

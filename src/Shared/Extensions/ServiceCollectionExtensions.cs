@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using StackExchange.Redis;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -164,6 +168,25 @@ public static class ServiceCollectionExtensions
         var redisConfig = ConfigurationOptions.Parse(configuration.GetConnectionString("Redis")!);
         redisConfig.AbortOnConnectFail = false;
         services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConfig));
+
+        return services;
+    }
+
+    public static IServiceCollection AddObservability(this IServiceCollection services,
+        ConfigurationManager configuration)
+    {
+        services.AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService(
+                serviceName: configuration["OTEL_SERVICE_NAME"] ?? "BudgetFriend.API",
+                serviceVersion: typeof(ServiceCollectionExtensions).Assembly.GetName().Version?.ToString()))
+            .WithTracing(tracing => tracing
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddOtlpExporter())
+            .WithMetrics(metrics => metrics
+                .AddAspNetCoreInstrumentation()
+                .AddMeter("System.Runtime")
+                .AddOtlpExporter());
 
         return services;
     }
