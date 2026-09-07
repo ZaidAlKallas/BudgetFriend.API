@@ -33,6 +33,7 @@ services:
       ConnectionStrings__Redis: redis:6379
 
       OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18890
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
 
     ports:
       - "8080:8080"

@@ -227,7 +227,7 @@ BudgetFriend uses OpenTelemetry for distributed traces and metrics, while Serilo
 - **Traces** — incoming HTTP requests and outgoing HTTP client calls are captured automatically.
 - **Metrics** — ASP.NET Core HTTP metrics, .NET runtime metrics, and a small set of custom business metrics (`budgetfriend.accounts.created`, `budgetfriend.transactions.created`, `budgetfriend.transfers.created`).
 - **Logs** — application logs stay in Serilog. Each request enriches log events with `TraceId` and `SpanId` so logs can be correlated with OpenTelemetry traces.
-- **Export** — traces and metrics are exported with the OpenTelemetry Protocol (OTLP). The endpoint is configured with the standard `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable; the default protocol is `http/protobuf`.
+- **Export** — traces and metrics are exported with the OpenTelemetry Protocol (OTLP). The endpoint and transport are configured with the standard `OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_EXPORTER_OTLP_PROTOCOL` environment variables; the Development configuration uses OTLP over HTTP (`http/protobuf`).
 
 ### Aspire Dashboard (local)
 
@@ -252,7 +252,7 @@ http://localhost:4317 (OTLP/gRPC)
 http://localhost:4318 (OTLP/HTTP)
 ```
 
-In the Development environment the API exports to `http://localhost:4318` by default (see `src/appsettings.Development.json`). To point the API at another OTLP backend, set the `OTEL_EXPORTER_OTLP_ENDPOINT` environment variable; no application code changes are required.
+In the Development environment the API exports to `http://localhost:4318` over `http/protobuf` (see `src/appsettings.Development.json`). To point the API at another OTLP backend, set the `OTEL_EXPORTER_OTLP_ENDPOINT` (and, if needed, `OTEL_EXPORTER_OTLP_PROTOCOL`) environment variable; no application code changes are required.
 
 ### What you can expect to see
 

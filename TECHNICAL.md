@@ -466,7 +466,7 @@ OpenTelemetry provides distributed traces and metrics:
 - HttpClient instrumentation for outgoing HTTP calls
 - ASP.NET Core HTTP metrics and .NET runtime metrics
 - A small set of BudgetFriend business metrics (`budgetfriend.*`)
-- OTLP export, configured through the standard `OTEL_EXPORTER_OTLP_ENDPOINT` setting
+- OTLP export, configured through the standard `OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_EXPORTER_OTLP_PROTOCOL` settings
 
 Serilog remains the logging system. Log events are enriched with `TraceId` and `SpanId` so application logs can be correlated with OpenTelemetry traces. No second logging framework is used.
 
