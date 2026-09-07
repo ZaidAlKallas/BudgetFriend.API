@@ -16,7 +16,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   api:
-    build: ./BudgetFriend.Api
+    build:
+      context: ./src
+      dockerfile: dockerfile
 
     container_name: budgetfriend.api
 
@@ -30,6 +32,8 @@ services:
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=budgetfriend_db;Username=postgres;Password=postgres
       ConnectionStrings__Redis: redis:6379
 
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://aspire-dashboard:18890
+
     ports:
       - "8080:8080"
 
@@ -40,6 +44,23 @@ services:
 
     ports:
       - "6379:6379"
+
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
+    container_name: budgetfriend.aspire-dashboard
+    restart: unless-stopped
+
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:18888
+      ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL: http://0.0.0.0:18889
+      ASPIRE_DASHBOARD_OTLP_HTTP_ENDPOINT_URL: http://0.0.0.0:18890
+      DASHBOARD__OTLP__AUTHMODE: Unsecured
+      DASHBOARD__FRONTEND__AUTHMODE: Unsecured
+
+    ports:
+      - "18888:18888"
+      - "4317:18889"
+      - "4318:18890"
 
 volumes:
   postgres_data:
