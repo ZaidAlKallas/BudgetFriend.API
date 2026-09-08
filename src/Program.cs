@@ -14,10 +14,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
-    .WriteTo.Console()
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {TraceId} {SpanId} {Message:lj}{NewLine}{Exception}")
     .WriteTo.File("logs/budgetfriend-.log",
         rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 14)
+        retainedFileCountLimit: 14,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {TraceId} {SpanId} {Message:lj}{NewLine}{Exception}")
     .Enrich.FromLogContext()
     .Enrich.WithMachineName()
     .Enrich.WithProperty("Application", "BudgetFriend")
@@ -50,6 +51,7 @@ builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
 builder.Services.AddProblemDetails();
 
+builder.Services.AddObservability(builder.Configuration);
 
 builder.Services.AddCustomApiVersioning();
 
