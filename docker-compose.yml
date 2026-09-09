@@ -28,6 +28,16 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       Jwt__SecretKey: ${JWT_SECRET}
+      
+      Email__SmtpHost: smtp.resend.com
+      Email__SmtpPort: 587
+      Email__SmtpEnableSsl: true
+      Email__SmtpUsername: ${SMTP_USERNAME}
+      Email__SmtpPassword: ${SMTP_PASSWORD}
+      Email__FromAddress: noreply@budgetfriend.zaidalkallas.me
+      
+      Google__ClientId: ${GOOGLE_CLIENT_ID}
+      Google__ClientSecret: ${GOOGLE_CLIENT_SECRET}
 
       ConnectionStrings__Database: Host=postgres;Port=5432;Database=budgetfriend_db;Username=postgres;Password=postgres
       ConnectionStrings__Redis: redis:6379

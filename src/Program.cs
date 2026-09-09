@@ -4,6 +4,7 @@ using BudgetFriend.API.Features.Categories;
 using BudgetFriend.API.Features.Dashboards;
 using BudgetFriend.API.Features.Transactions;
 using BudgetFriend.API.Features.Transfers;
+using BudgetFriend.API.Shared.Errors;
 using BudgetFriend.API.Shared.Extensions;
 using FluentValidation;
 using HealthChecks.UI.Client;
@@ -47,9 +48,10 @@ builder.Services.AddHttpContextAccessor()
 builder.Services.AddHealthChecks(builder.Configuration);
 
 builder.Services.AddCaching(builder.Configuration);
-builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
 builder.Services.AddProblemDetails();
+
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddObservability(builder.Configuration);
 

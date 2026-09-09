@@ -60,7 +60,7 @@ public static class GetAccountTransactionsEndpoint
                 t.Id,
                 t.AccountId,
                 t.Account.Name,
-                t.CategoryId,
+                t.CategoryId.GetValueOrDefault(),
                 t.Category != null ? t.Category.Name : null,
                 t.Account.Currency,
                 t.Amount,

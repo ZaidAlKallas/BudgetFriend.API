@@ -4,7 +4,7 @@ public sealed record GetTransactionResponse(
     Guid Id,
     Guid AccountId,
     string AccountName,
-    Guid? CategoryId,
+    Guid CategoryId,
     string? CategoryName,
     Currency Currency,
     decimal Amount,

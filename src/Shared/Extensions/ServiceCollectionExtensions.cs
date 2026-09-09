@@ -2,9 +2,13 @@ using Asp.Versioning;
 using BudgetFriend.API.Features.Authentication.Google;
 using BudgetFriend.API.Features.Authentication.Jwt;
 using BudgetFriend.API.Features.Authentication.RefreshToken;
+using BudgetFriend.API.Shared.Caching;
 using BudgetFriend.API.Shared.Email;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
@@ -137,9 +141,12 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddHealthChecks(this IServiceCollection services,
         ConfigurationManager configuration)
     {
-        services.AddHealthChecks()
-            .AddNpgSql(configuration.GetConnectionString("Database")!)
-            .AddRedis(configuration.GetConnectionString("Redis")!);
+        var healthChecks = services.AddHealthChecks()
+            .AddNpgSql(configuration.GetConnectionString("Database")!);
+
+        var redisConnectionString = configuration.GetConnectionString("Redis");
+        if (!string.IsNullOrWhiteSpace(redisConnectionString))
+            healthChecks.AddRedis(redisConnectionString);
 
         return services;
     }
@@ -160,14 +167,30 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddCaching(this IServiceCollection services,
         ConfigurationManager configuration)
     {
-        services.AddStackExchangeRedisCache(options =>
-        {
-            options.Configuration = configuration.GetConnectionString("Redis");
-        });
+        services.AddMemoryCache();
 
-        var redisConfig = ConfigurationOptions.Parse(configuration.GetConnectionString("Redis")!);
-        redisConfig.AbortOnConnectFail = false;
-        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConfig));
+        if (!string.IsNullOrWhiteSpace(configuration.GetConnectionString("Redis")))
+        {
+            services.AddSingleton<IConnectionMultiplexer>(sp =>
+            {
+                var connectionString = sp.GetRequiredService<IConfiguration>().GetConnectionString("Redis");
+                var redisConfig = ConfigurationOptions.Parse(connectionString!);
+                redisConfig.AbortOnConnectFail = false;
+                return ConnectionMultiplexer.Connect(redisConfig);
+            });
+
+            services.AddStackExchangeRedisCache(_ => { });
+
+            services.AddOptions<RedisCacheOptions>()
+                .Configure<IConnectionMultiplexer>((options, multiplexer) =>
+                    options.ConnectionMultiplexerFactory = () => Task.FromResult(multiplexer));
+        }
+
+        services.AddSingleton<ICacheService>(sp => new HybridCacheService(
+            sp.GetRequiredService<IMemoryCache>(),
+            sp.GetService<IDistributedCache>(),
+            sp.GetService<IConnectionMultiplexer>(),
+            sp.GetRequiredService<ILogger<HybridCacheService>>()));
 
         return services;
     }
