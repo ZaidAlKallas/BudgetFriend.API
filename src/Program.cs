@@ -48,7 +48,6 @@ builder.Services.AddHttpContextAccessor()
 builder.Services.AddHealthChecks(builder.Configuration);
 
 builder.Services.AddCaching(builder.Configuration);
-builder.Services.AddScoped<ICacheService, RedisCacheService>();
 
 builder.Services.AddProblemDetails();
 

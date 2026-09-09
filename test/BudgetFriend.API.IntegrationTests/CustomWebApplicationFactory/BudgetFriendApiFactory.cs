@@ -24,6 +24,14 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
         .WithCleanUp(true)
         .Build();
 
+    private string? _redisConnectionString;
+
+    public BudgetFriendApiFactory()
+    {
+    }
+
+    public void UseRealRedis(string connectionString) => _redisConnectionString = connectionString;
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         var connectionString = _container.GetConnectionString();
@@ -32,7 +40,7 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
 
         builder.ConfigureAppConfiguration((ctx, config) =>
         {
-            config.AddInMemoryCollection(new Dictionary<string, string?>
+            var overrides = new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Database"] = connectionString,
                 ["Jwt:Issuer"] = "TestIssuer",
@@ -44,7 +52,12 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
                 ["Serilog:MinimumLevel:Default"] = "Fatal",
                 ["Serilog:WriteTo:0:Name"] = "Console",
                 ["Serilog:WriteTo:0:Args:restrictedToMinimumLevel"] = "Fatal"
-            });
+            };
+
+            if (_redisConnectionString is not null)
+                overrides["ConnectionStrings:Redis"] = _redisConnectionString;
+
+            config.AddInMemoryCollection(overrides);
         });
 
         builder.ConfigureServices(services =>
@@ -56,10 +69,13 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
             foreach (var descriptor in rateLimiterDescriptors)
                 services.Remove(descriptor);
 
-            services.RemoveAll<IDistributedCache>();
-            services.AddDistributedMemoryCache();
+            if (_redisConnectionString is null)
+            {
+                services.RemoveAll<IDistributedCache>();
+                services.AddDistributedMemoryCache();
 
-            services.RemoveAll<IConnectionMultiplexer>();
+                services.RemoveAll<IConnectionMultiplexer>();
+            }
 
             services.RemoveAll<IEmailSender>();
             services.AddSingleton<IEmailSender, TestEmailSender>();
