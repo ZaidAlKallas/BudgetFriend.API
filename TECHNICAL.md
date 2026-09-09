@@ -386,16 +386,100 @@ It provides:
 - Async database operations
 - Persistence
 
+### Production Database (Neon)
+
+In the planned production architecture the API runs on Render and PostgreSQL is hosted by Neon. No Neon-specific code is required: the application connects to PostgreSQL using the `ConnectionStrings:Database` value supplied by ASP.NET Core configuration, and Neon is treated purely as the PostgreSQL hosting provider.
+
+```text
+Render environment variable (ConnectionStrings__Database)
+    ↓
+ASP.NET Core configuration
+    ↓
+EF Core / Npgsql
+    ↓
+Neon PostgreSQL
+```
+
+The local development setup is unchanged and continues to use the PostgreSQL container from `docker-compose.yml`:
+
+```text
+Local PostgreSQL (docker-compose.yml)
+    ↓
+appsettings.json
+```
+
+Configuration precedence is standard ASP.NET Core behavior: environment variables (for example `ConnectionStrings__Database` on Render) override the value in `appsettings.json`. No production connection string is stored in the repository.
+
+#### Npgsql connection string format
+
+Npgsql consumes connection strings in the ADO.NET key/value format. The existing local value already uses this format:
+
+```text
+Host=<host>;Port=5432;Database=<db>;Username=<user>;Password=<password>;SSL Mode=Require;Maximum Pool Size=<n>;No Reset On Close=true
+```
+
+When a Neon connection string is pasted into a Render environment variable, use the **Npgsql key/value format** rather than the `postgresql://` URI format shown in parts of the Neon Console. Relevant Npgsql options for Neon:
+
+- `SSL Mode=Require` — Neon requires TLS. Npgsql defaults to `Prefer`; `Require` matches Neon's `sslmode=require`.
+- `Maximum Pool Size` — Npgsql pools connections by default (max 100). Neon Free-tier computes have a small `max_connections`, so keep the pool size modest (for example 10–20) unless the workload needs more.
+- `No Reset On Close=true` — when Npgsql's own pool sits on top of Neon's PgBouncer (pooled string), this disables Npgsql's `DISCARD ALL` reset behavior, which does not make sense across PgBouncer in transaction mode.
+- Uses **Npgsql pooler** connection string (hostname with `-pooler` suffix) for application traffic.
+
+#### Migrations and pooled vs. direct connections
+
+Neon provides a **pooled** (PgBouncer) and a **direct** (unpooled) connection string for each database:
+
+| Activity | Connection type |
+| --- | --- |
+| Application runtime traffic | Pooled (`-pooler` hostname) |
+| EF Core schema migrations, `pg_dump`, `pg_restore`, session-level SQL | Direct (no `-pooler`) |
+
+Run migrations with the direct connection string. Pooled connections use PgBouncer in transaction mode and can fail schema operations in ways that are hard to diagnose.
+
+The API only auto-applies migrations in the `Development` environment (`WebApplicationExtensions.cs`), so the production (Render/`Production`) startup never runs migrations automatically. This is intentional: applying migrations remains an explicit, operator-controlled step so multiple API instances cannot race to migrate the schema. If Render is ever scaled to more than one instance, keeping migrations out of startup avoids concurrent-migration contention.
+
+#### Production database initialization procedure
+
+This procedure is followed once, before first deployment. It does not contain or require any credentials stored in the repository.
+
+1. **Create the Neon project/database.** In Neon, create a project (or use an existing one) and note the branch (default `main`), database name (default `neondb`), and role (default `neondb_owner`). No Neon Auth is used; authentication remains handled by the ASP.NET Core API.
+2. **Obtain the connection strings.** In the Neon Console, use **Connect** to copy both connection strings: the **pooled** one (hostname contains `-pooler`) for the application, and the **direct** one (no `-pooler`) for migrations.
+3. **Store the connection string securely.** Configure the production connection string as an environment variable on Render, for example:
+   - `ConnectionStrings__Database` = the pooled Neon connection string in Npgsql key/value format (with `SSL Mode=Require`).
+   - Never place the value in `appsettings.json`, `docker-compose.yml`, or any committed file.
+4. **Apply the EF Core migrations.** Apply migrations against the Neon database using the **direct** connection string and the EF Core tooling, from the directory that contains the startup project:
+   ```bash
+   dotnet ef database update --project src/BudgetFriend.API
+   ```
+   The required connection string must be supplied via an environment variable, for example `ConnectionStrings__Database="Host=<direct-neon-host>;Port=5432;Database=<db>;Username=<user>;Password=<password>;SSL Mode=Require"`.
+5. **Verify the database schema.** Inspect the schema in the Neon Console (Tables view) or connect with the CLI/editor and confirm all tables (`Users`, `Accounts`, `Categories`, `Transactions`, `Transfers`, `RefreshTokens`) and the `__EFMigrationsHistory` table exist.
+6. **Verify the API can connect.** Deploy the API to Render with the pooled connection string configured as `ConnectionStrings__Database`, then check the health endpoint (`/_health`), which includes the PostgreSQL (`Npgsql`) health check.
+
+Alternatively, only migrations can be executed during a Render pre-deploy/build step using the direct connection string, while the runtime connection remains pooled. The simplest initial approach is step 4 done manually, once, before enabling traffic.
+
+#### Neon Free Tier reliability notes
+
+Neon's Free plan is suitable for a small personal application but has limits worth knowing:
+
+- **Storage** — 0.5 GB per project. Once exceeded, writes that increase storage fail until space is freed or the plan is upgraded.
+- **Compute** — 100 CU-hours per project per month. An idle compute scales to zero after 5 minutes of inactivity (cannot be disabled on Free) and the first query has a cold-start penalty (hundreds of milliseconds). Hitting the CU-hour cap suspends compute until the next billing period.
+- **Connections** — `max_connections` scales with compute size (a 0.25 CU compute allows approximately 104 raw connections). PgBouncer pooling accepts up to 10,000 client connections, which is why the application should use the pooled string. Npgsql's own pool safely multiplexes onto this.
+- **Branches** — up to 10 branches per project. Copy-on-write branches are instant and can be used to test migrations on a production-like copy before applying to the primary branch.
+- **Backups/recovery** — instant restore history of 6 hours (capped at 1 GB of change history) plus 1 manual snapshot per project. For a financial application holding real data, these free-tier protections are thin: consider periodic `pg_dump` exports as an additional recovery path until a paid plan with a longer history window is justified.
+- **Egress** — 5 GB of public network transfer per month.
+
 ---
 
-## 9. Distributed Caching
+## 9. Caching
 
-### Redis
+### Overview
 
-Redis is used as the distributed cache for selected read-heavy financial endpoints, currently:
+Redis is the preferred cache for selected read-heavy financial endpoints, currently:
 
 - Dashboard
 - Summary
+
+ASP.NET Core's in-memory cache (`IMemoryCache`) acts as a fallback so the API stays functional when Redis is unavailable (for example during a brief Redis outage or while Redis is being deployed).
 
 Caching is accessed through an abstraction:
 
@@ -406,7 +490,7 @@ ICacheService
 with the current implementation:
 
 ```text
-RedisCacheService
+HybridCacheService
 ```
 
 Conceptually:
@@ -418,13 +502,47 @@ Endpoint
 ICacheService
    │
    ▼
-RedisCacheService
+HybridCacheService
    │
-   ▼
-Redis
+   ├── Redis available  ────────────►  Redis
+   │
+   └── Redis unavailable ───────────►  IMemoryCache (in-process fallback)
 ```
 
 Feature code therefore does not depend directly on Redis APIs, keeping the feature layer independent from the specific cache provider.
+
+### HybridCacheService
+
+`HybridCacheService` selects a backend for each operation:
+
+- **Redis backend** — preferred. Used when Redis is available and reachable.
+- **Memory backend** — in-process fallback. Used when Redis is not configured, or when a Redis operation fails.
+
+Behavior:
+
+- When a Redis operation throws a `RedisException`, the service switches to the in-memory backend. The Redis backend is then re-probed at most once every 30 seconds, so the API recovers automatically once Redis is reachable without pinging Redis on every request.
+- If no `ConnectionStrings:Redis` value is configured, the service is memory-only from startup and never attempts Redis.
+- `Remove` and `RemoveByPrefix` clear both backends best-effort, so stale entries cannot survive a cache invalidation regardless of which backend is active.
+- In-memory entries are namespaced with a prefix and tracked in an index so `RemoveByPrefix` (Redis `KEYS`-style prefix removal) also works against the in-memory cache, which does not support prefix queries natively.
+
+Cache entries expire after 5 minutes (the TTL applied when writing dashboard and summary responses) and are invalidated on financial changes.
+
+### Backend Wiring
+
+`AddCaching` (in `ServiceCollectionExtensions`) always registers `IMemoryCache` and `ICacheService`. Redis wiring is config-driven:
+
+- `ConnectionStrings:Redis` present → `AddStackExchangeRedisCache` and a shared `IConnectionMultiplexer` are registered; `HybridCacheService` starts with the Redis backend.
+- `ConnectionStrings:Redis` missing or empty → no distributed cache or multiplexer is registered; caching is memory-only.
+
+The Redis connection string is read from configuration at dependency resolution time rather than registration time, so runtime configuration overrides are always honored.
+
+### Deployment Resilience
+
+Because the fallback is in-process, when Redis is down each API instance serves cached responses from its own memory. This means:
+
+- The API continues to serve cached dashboard and summary data during a Redis outage; database queries still happen on cache misses.
+- Cached values may differ briefly across instances because in-memory fallback state is not shared. This is bounded by the 5-minute cache TTL, after which entries are re-fetched from the database (the source of truth).
+- Corruption of the database is not possible: the cache is read-through to PostgreSQL and writes always go to the database regardless of cache backend.
 
 ### Cache Invalidation
 
@@ -538,6 +656,7 @@ The project uses:
 - ASP.NET Core `WebApplicationFactory`
 - Testcontainers
 - PostgreSQL
+- Redis
 
 Tests run through the HTTP interface against a real PostgreSQL instance running in an isolated temporary container rather than relying exclusively on mocked database behavior.
 
@@ -565,6 +684,7 @@ This allows the tests to validate interactions between:
 - Application logic
 - EF Core
 - PostgreSQL
+- Redis-backed caching (and in-memory fallback when Redis is unavailable)
 - Authentication
 - Validation
 
