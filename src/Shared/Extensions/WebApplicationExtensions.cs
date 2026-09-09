@@ -23,24 +23,9 @@ public static class WebApplicationExtensions
                     config.TokenName = "Authorization";
                 });
             });
-
-            using var scope = app.Services.CreateScope();
-
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-            try
-            {
-                Log.Information("Applying database migrations...");
-                await db.Database.MigrateAsync();
-                Log.Information("Database migrations applied successfully.");
-            }
-            catch (Exception ex)
-            {
-                Log.Fatal(ex, "Failed to apply database migrations.");
-                throw;
-            }
         }
 
+        await app.InitializeDatabase();
         app.UseHttpsRedirection();
         app.UseRateLimiter();
         app.UseExceptionHandler();
@@ -80,5 +65,25 @@ public static class WebApplicationExtensions
         });
 
         return app;
+    }
+
+    private static async Task InitializeDatabase(this WebApplication app)
+    {
+        using var scope = app.Services.CreateScope();
+
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        try
+        {
+            Log.Information("Applying database migrations...");
+            await db.Database.MigrateAsync();
+            Log.Information("Database migrations applied successfully.");
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Failed to apply database migrations.");
+            throw;
+        }
+
     }
 }
