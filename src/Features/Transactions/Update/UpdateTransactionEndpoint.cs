@@ -46,7 +46,7 @@ public static class UpdateTransactionEndpoint
         return Results.Ok(new UpdateTransactionResponse(
             transaction.Id,
             transaction.AccountId,
-            transaction.CategoryId,
+            transaction.CategoryId.GetValueOrDefault(),
             request.Amount,
             request.Note?.Trim(),
             request.TransactionDate,

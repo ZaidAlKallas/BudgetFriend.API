@@ -60,7 +60,7 @@ public static class CreateTransactionEndpoint
             new CreateTransactionResponse(
                 transaction.Id,
                 transaction.AccountId,
-                transaction.CategoryId,
+                transaction.CategoryId.GetValueOrDefault(),
                 transaction.Amount,
                 transaction.Note,
                 transaction.TransactionDate,
