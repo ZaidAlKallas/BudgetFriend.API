@@ -228,7 +228,11 @@ public static class ServiceCollectionExtensions
             if (!string.IsNullOrEmpty(uri.UserInfo))
             {
                 var parts = uri.UserInfo.Split(':');
-                normalized += ",password=" + Uri.UnescapeDataString(parts[^1]);
+                if (parts.Length > 1)
+                    normalized += ",user=" + Uri.UnescapeDataString(parts[0])
+                        + ",password=" + Uri.UnescapeDataString(parts[^1]);
+                else
+                    normalized += ",password=" + Uri.UnescapeDataString(parts[0]);
             }
 
             if (uri.Scheme.Equals("rediss", StringComparison.OrdinalIgnoreCase))
