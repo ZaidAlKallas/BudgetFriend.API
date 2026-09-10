@@ -172,7 +172,7 @@ public static class ServiceCollectionExtensions
             services.AddSingleton<IConnectionMultiplexer>(sp =>
             {
                 var connectionString = sp.GetRequiredService<IConfiguration>().GetConnectionString("Redis");
-                var redisConfig = ConfigurationOptions.Parse(connectionString!);
+                var redisConfig = ConfigurationOptions.Parse(NormalizeRedisConnectionString(connectionString!));
                 redisConfig.AbortOnConnectFail = false;
                 redisConfig.ConnectTimeout = 5000;
                 redisConfig.SyncTimeout = 5000;
@@ -213,5 +213,30 @@ public static class ServiceCollectionExtensions
                 .AddOtlpExporter());
 
         return services;
+    }
+
+    private static string NormalizeRedisConnectionString(string connectionString)
+    {
+        var trimmed = connectionString.Trim();
+
+        if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
+            && (uri.Scheme.Equals("redis", StringComparison.OrdinalIgnoreCase)
+                || uri.Scheme.Equals("rediss", StringComparison.OrdinalIgnoreCase)))
+        {
+            var normalized = uri.Host + ":" + (uri.Port > 0 ? uri.Port : 6379);
+
+            if (!string.IsNullOrEmpty(uri.UserInfo))
+            {
+                var parts = uri.UserInfo.Split(':');
+                normalized += ",password=" + Uri.UnescapeDataString(parts[^1]);
+            }
+
+            if (uri.Scheme.Equals("rediss", StringComparison.OrdinalIgnoreCase))
+                normalized += ",ssl=true";
+
+            return normalized;
+        }
+
+        return trimmed;
     }
 }
