@@ -2,7 +2,6 @@ using Asp.Versioning;
 using BudgetFriend.API.Features.Authentication.Google;
 using BudgetFriend.API.Features.Authentication.Jwt;
 using BudgetFriend.API.Features.Authentication.RefreshToken;
-using BudgetFriend.API.Shared.Caching;
 using BudgetFriend.API.Shared.Email;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
@@ -12,7 +11,6 @@ using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
-using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -117,7 +115,7 @@ public static class ServiceCollectionExtensions
         if (configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>()?.UseConsoleEmailSender ?? true)
             services.AddScoped<IEmailSender, ConsoleEmailSender>();
         else
-            services.AddScoped<IEmailSender, SmtpEmailSender>();
+            services.AddScoped<IEmailSender, ResendEmailSender>();
 
         return services;
     }
@@ -169,17 +167,23 @@ public static class ServiceCollectionExtensions
     {
         services.AddMemoryCache();
 
-        if (!string.IsNullOrWhiteSpace(configuration.GetConnectionString("Redis")))
+        var redisConnectionString = configuration.GetConnectionString("Redis");
+
+        if (!string.IsNullOrWhiteSpace(redisConnectionString))
         {
             services.AddSingleton<IConnectionMultiplexer>(sp =>
             {
-                var connectionString = sp.GetRequiredService<IConfiguration>().GetConnectionString("Redis");
-                var redisConfig = ConfigurationOptions.Parse(connectionString!);
+                var redisConfig = ConfigurationOptions.Parse(redisConnectionString);
                 redisConfig.AbortOnConnectFail = false;
+                redisConfig.ConnectTimeout = 5000;
+                redisConfig.SyncTimeout = 5000;
                 return ConnectionMultiplexer.Connect(redisConfig);
             });
 
-            services.AddStackExchangeRedisCache(_ => { });
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnectionString;
+            });
 
             services.AddOptions<RedisCacheOptions>()
                 .Configure<IConnectionMultiplexer>((options, multiplexer) =>
