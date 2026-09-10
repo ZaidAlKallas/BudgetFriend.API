@@ -167,23 +167,19 @@ public static class ServiceCollectionExtensions
     {
         services.AddMemoryCache();
 
-        var redisConnectionString = configuration.GetConnectionString("Redis");
-
-        if (!string.IsNullOrWhiteSpace(redisConnectionString))
+        if (!string.IsNullOrWhiteSpace(configuration.GetConnectionString("Redis")))
         {
             services.AddSingleton<IConnectionMultiplexer>(sp =>
             {
-                var redisConfig = ConfigurationOptions.Parse(redisConnectionString);
+                var connectionString = sp.GetRequiredService<IConfiguration>().GetConnectionString("Redis");
+                var redisConfig = ConfigurationOptions.Parse(connectionString!);
                 redisConfig.AbortOnConnectFail = false;
                 redisConfig.ConnectTimeout = 5000;
                 redisConfig.SyncTimeout = 5000;
                 return ConnectionMultiplexer.Connect(redisConfig);
             });
 
-            services.AddStackExchangeRedisCache(options =>
-            {
-                options.Configuration = redisConnectionString;
-            });
+            services.AddStackExchangeRedisCache(_ => { });
 
             services.AddOptions<RedisCacheOptions>()
                 .Configure<IConnectionMultiplexer>((options, multiplexer) =>
