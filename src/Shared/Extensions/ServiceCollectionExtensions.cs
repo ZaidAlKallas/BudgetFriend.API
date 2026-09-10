@@ -144,7 +144,7 @@ public static class ServiceCollectionExtensions
 
         var redisConnectionString = configuration.GetConnectionString("Redis");
         if (!string.IsNullOrWhiteSpace(redisConnectionString))
-            healthChecks.AddRedis(redisConnectionString);
+            healthChecks.AddRedis(sp => sp.GetRequiredService<IConnectionMultiplexer>());
 
         return services;
     }
