@@ -17,7 +17,7 @@ public static class GetTransferByIdEndpoint
         CancellationToken cancellationToken)
     {
         var transfer = await dbContext.Transfers
-            .Where(t => t.FromAccount.UserId == currentUser.UserId && t.Id == transferId)
+            .Where(t => t.FromAccount.UserId == currentUser.UserId && t.ToAccount.UserId == currentUser.UserId && t.Id == transferId)
             .Select(t => new GetTransferResponse(
                 t.Id,
                 t.FromAccountId,

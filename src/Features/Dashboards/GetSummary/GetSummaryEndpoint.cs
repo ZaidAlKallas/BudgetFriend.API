@@ -23,7 +23,9 @@ public static class GetSummaryEndpoint
         var from = fromDate?.ToUniversalTime() ?? new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
         var to = toDate?.ToUniversalTime() ?? now;
 
-        var cacheKey = CacheKeys.Summary(userId, fromDate, toDate);
+        var cacheKey = fromDate is null && toDate is null
+            ? CacheKeys.Summary(userId)
+            : CacheKeys.Summary(userId, from, to);
         var cachedSummary = await cacheService.GetAsync<GetSummaryResponse>(cacheKey, cancellationToken);
         if (cachedSummary is not null)
         {

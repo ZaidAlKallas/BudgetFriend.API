@@ -20,20 +20,22 @@ public static class UpdateCategoryEndpoint
         ICacheService cacheService,
         CancellationToken cancellationToken)
     {
+        var normalizedName = request.Name.Trim();
+
         var exists = await dbContext.Categories
-            .AnyAsync(c => c.Name == request.Name
+            .AnyAsync(c => c.Name == normalizedName
                 && c.TransactionType == request.TransactionType
                 && c.UserId == currentUser.UserId
                 && c.Id != categoryId,
                 cancellationToken);
 
         if (exists)
-            return Results.Conflict($"A category with the name '{request.Name}' and type '{request.TransactionType}' already exists.");
+            return Results.Conflict($"A category with the name '{normalizedName}' and type '{request.TransactionType}' already exists.");
 
         var updated = await dbContext.Categories
             .Where(c => c.UserId == currentUser.UserId && c.Id == categoryId)
             .ExecuteUpdateAsync(c => c
-                .SetProperty(x => x.Name, request.Name.Trim())
+                .SetProperty(x => x.Name, normalizedName)
                 .SetProperty(x => x.TransactionType, request.TransactionType),
                 cancellationToken);
 
@@ -42,6 +44,6 @@ public static class UpdateCategoryEndpoint
 
         await CacheInvalidation.InvalidateFinancialDataAsync(cacheService, currentUser.UserId, cancellationToken);
 
-        return Results.Ok(new UpdateCategoryResponse(categoryId, request.Name.Trim(), request.TransactionType));
+        return Results.Ok(new UpdateCategoryResponse(categoryId, normalizedName, request.TransactionType));
     }
 }

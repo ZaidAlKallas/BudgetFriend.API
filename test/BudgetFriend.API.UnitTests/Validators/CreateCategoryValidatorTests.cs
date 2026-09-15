@@ -48,4 +48,24 @@ public sealed class CreateCategoryValidatorTests
 
         result.ShouldHaveValidationErrorFor(x => x.TransactionType);
     }
+
+    [Fact]
+    public void Validate_ShouldHaveError_WhenTransactionTypeIsTransferIn()
+    {
+        var request = new CreateCategoryRequest("Test", TransactionType.TransferIn);
+
+        var result = _sut.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.TransactionType);
+    }
+
+    [Fact]
+    public void Validate_ShouldHaveError_WhenTransactionTypeIsTransferOut()
+    {
+        var request = new CreateCategoryRequest("Test", TransactionType.TransferOut);
+
+        var result = _sut.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.TransactionType);
+    }
 }

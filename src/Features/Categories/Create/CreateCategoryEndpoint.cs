@@ -19,20 +19,22 @@ public static class CreateCategoryEndpoint
         ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
+        var normalizedName = request.Name.Trim();
+
         var exists = await dbContext.Categories
             .AnyAsync(c => c.UserId == currentUser.UserId
-                && c.Name == request.Name
+                && c.Name == normalizedName
                 && c.TransactionType == request.TransactionType,
                 cancellationToken);
 
         if (exists)
-            return Results.Conflict($"A category with the name '{request.Name}' and type '{request.TransactionType}' already exists.");
+            return Results.Conflict($"A category with the name '{normalizedName}' and type '{request.TransactionType}' already exists.");
 
         var category = new Category
         {
             Id = Guid.NewGuid(),
             UserId = currentUser.UserId,
-            Name = request.Name.Trim(),
+            Name = normalizedName,
             TransactionType = request.TransactionType,
         };
 

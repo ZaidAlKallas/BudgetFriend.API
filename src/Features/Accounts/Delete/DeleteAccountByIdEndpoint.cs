@@ -15,6 +15,7 @@ public static class DeleteAccountByIdEndpoint
         Guid accountId,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ICacheService cacheService,
         ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
@@ -36,6 +37,8 @@ public static class DeleteAccountByIdEndpoint
         await dbContext.Accounts
             .Where(a => a.Id == accountId)
             .ExecuteDeleteAsync(cancellationToken);
+
+        await CacheInvalidation.InvalidateFinancialDataAsync(cacheService, currentUser.UserId, cancellationToken);
 
         logger.LogInformation("Account {AccountId} deleted by user {UserId}", accountId, currentUser.UserId);
         return Results.NoContent();

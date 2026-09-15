@@ -6,8 +6,9 @@ public sealed class UpdateTransactionRequestValidator : AbstractValidator<Update
 {
     public UpdateTransactionRequestValidator()
     {
-        RuleFor(x => x.Amount)
+RuleFor(x => x.Amount)
             .NotEqual(0)
+            .GreaterThan(0)
             .PrecisionScale(18, 2, false);
 
         RuleFor(x => x.TransactionDate)

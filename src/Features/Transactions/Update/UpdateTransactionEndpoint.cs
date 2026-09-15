@@ -21,14 +21,14 @@ public static class UpdateTransactionEndpoint
     {
         var transaction = await dbContext.Transactions
             .Where(t => t.Account.UserId == currentUser.UserId && t.Id == transactionId)
-            .Select(t => new { t.Id, t.AccountId, t.Amount, t.CategoryId, t.CreatedAtUtc })
+            .Select(t => new { t.Id, t.AccountId, t.Amount, t.CategoryId, t.TransactionType, t.CreatedAtUtc })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (transaction is null)
             return Results.NotFound();
 
-        if (transaction.CategoryId is null && transaction.Amount != request.Amount)
-            return Results.Conflict("Cannot update amount for transfer transactions");
+        if (transaction.TransactionType is TransactionType.TransferIn or TransactionType.TransferOut)
+            return Results.Conflict("Transfer transactions can only be modified through the transfer endpoint.");
 
         var updated = await dbContext.Transactions
             .Where(t => t.Id == transactionId)

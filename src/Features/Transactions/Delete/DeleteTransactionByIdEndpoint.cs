@@ -18,8 +18,19 @@ public static class DeleteTransactionByIdEndpoint
         ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
-        var deletedRows = await dbContext.Transactions
+        var transaction = await dbContext.Transactions
             .Where(t => t.Account.UserId == currentUser.UserId && t.Id == transactionId)
+            .Select(t => new { t.Id, t.TransactionType })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (transaction is null)
+            return Results.NotFound();
+
+        if (transaction.TransactionType is TransactionType.TransferIn or TransactionType.TransferOut)
+            return Results.Conflict("Transfer transactions can only be removed through the transfer endpoint.");
+
+        var deletedRows = await dbContext.Transactions
+            .Where(t => t.Id == transactionId)
             .ExecuteDeleteAsync(cancellationToken);
 
         if (deletedRows == 0)

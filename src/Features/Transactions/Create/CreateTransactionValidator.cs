@@ -20,6 +20,7 @@ public sealed class CreateTransactionValidator : AbstractValidator<CreateTransac
 
         RuleFor(x => x.Amount)
             .NotEqual(0)
+            .GreaterThan(0)
             .PrecisionScale(18, 2, false);
     }
 }

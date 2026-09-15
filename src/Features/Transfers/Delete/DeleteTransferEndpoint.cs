@@ -19,7 +19,7 @@ public static class DeleteTransferEndpoint
         CancellationToken cancellationToken)
     {
         var transfer = await dbContext.Transfers
-            .Where(t => t.FromAccount.UserId == currentUser.UserId && t.Id == transferId)
+            .Where(t => t.FromAccount.UserId == currentUser.UserId && t.ToAccount.UserId == currentUser.UserId && t.Id == transferId)
             .Select(t => new { t.OutgoingTransactionId, t.IncomingTransactionId })
             .FirstOrDefaultAsync(cancellationToken);
 

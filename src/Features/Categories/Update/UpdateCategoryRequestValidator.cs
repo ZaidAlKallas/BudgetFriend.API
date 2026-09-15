@@ -11,6 +11,8 @@ public sealed class UpdateCategoryRequestValidator : AbstractValidator<UpdateCat
             .MaximumLength(100);
 
         RuleFor(x => x.TransactionType)
-            .IsInEnum();
+            .IsInEnum()
+            .Must(t => t is TransactionType.Income or TransactionType.Expense)
+            .WithMessage("Only Income and Expense transaction types are allowed.");
     }
 }

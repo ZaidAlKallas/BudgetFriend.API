@@ -15,20 +15,23 @@ public static class CreateAccountEndpoint
         CreateAccountRequest request,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ICacheService cacheService,
         ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
+        var normalizedName = request.Name.Trim();
+
         var account = new Account
         {
             Id = Guid.NewGuid(),
             UserId = currentUser.UserId,
-            Name = request.Name.Trim(),
+            Name = normalizedName,
             InitialBalance = request.InitialBalance,
             Currency = request.Currency
         };
 
         var exists = await dbContext.Accounts
-                .AnyAsync(a => a.UserId == currentUser.UserId && a.Name == request.Name, cancellationToken);
+                .AnyAsync(a => a.UserId == currentUser.UserId && a.Name == normalizedName, cancellationToken);
 
         if (exists)
             return Results.Conflict($"A account with this name already exists.");
@@ -38,6 +41,8 @@ public static class CreateAccountEndpoint
         await dbContext.SaveChangesAsync(cancellationToken);
 
         BudgetFriendMetrics.AccountsCreated.Add(1);
+
+        await CacheInvalidation.InvalidateFinancialDataAsync(cacheService, currentUser.UserId, cancellationToken);
 
         logger.LogInformation("Account {AccountId} created for user {UserId}", account.Id, currentUser.UserId);
 

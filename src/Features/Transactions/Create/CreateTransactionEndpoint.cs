@@ -9,7 +9,8 @@ public static class CreateTransactionEndpoint
             .WithSummary("Create a new transaction")
             .WithDescription("Creates a new transaction for an account")
             .Produces<CreateTransactionResponse>(StatusCodes.Status201Created)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
 
     private static async Task<IResult> HandleAsync(
         CreateTransactionRequest request,
@@ -26,12 +27,16 @@ public static class CreateTransactionEndpoint
         if (!accountExists)
             return Results.NotFound(new { message = "Account not found." });
 
-        var categoryExists = await dbContext.Categories
-            .AnyAsync(c => c.Id == request.CategoryId && c.UserId == currentUser.UserId,
-                cancellationToken);
+        var category = await dbContext.Categories
+            .Where(c => c.Id == request.CategoryId && c.UserId == currentUser.UserId)
+            .Select(c => new { c.TransactionType })
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (!categoryExists)
+        if (category is null)
             return Results.NotFound(new { message = "Category not found." });
+
+        if (category.TransactionType != request.TransactionType)
+            return Results.BadRequest(new { message = "Category type does not match the transaction type." });
 
         var transaction = new Transaction
         {

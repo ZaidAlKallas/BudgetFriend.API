@@ -76,7 +76,7 @@ public static class GetDashboardEndpoint
                 (Guid)g.Key.CategoryId!,
                 g.Key.Name,
                 [.. g.Select(x => new CategoryCurrencyBreakdown(x.Currency, x.TotalAmount, x.TransactionCount))]))
-            .OrderByDescending(c => c.AmountsByCurrency.Sum(x => x.Count))
+            .OrderByDescending(c => c.AmountsByCurrency.Sum(x => x.TotalAmount))
             .Take(_dashboardTopCategories)
             .ToList();
 
