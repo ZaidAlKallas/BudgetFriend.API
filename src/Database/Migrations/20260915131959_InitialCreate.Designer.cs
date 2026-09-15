@@ -12,20 +12,20 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace BudgetFriend.API.Database.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260714190342_AddTransferFeatureWithTransactionLinks")]
-    partial class AddTransferFeatureWithTransactionLinks
+    [Migration("20260915131959_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.8")
+                .HasAnnotation("ProductVersion", "10.0.11")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.Account", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.Account", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -54,7 +54,7 @@ namespace BudgetFriend.API.Database.Migrations
                     b.ToTable("Accounts");
                 });
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.Category", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -79,7 +79,7 @@ namespace BudgetFriend.API.Database.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.RefreshToken", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -120,7 +120,7 @@ namespace BudgetFriend.API.Database.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.Transaction", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.Transaction", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -160,7 +160,7 @@ namespace BudgetFriend.API.Database.Migrations
                     b.ToTable("Transactions");
                 });
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.Transfer", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.Transfer", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -211,7 +211,7 @@ namespace BudgetFriend.API.Database.Migrations
                     b.ToTable("Transfers");
                 });
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.User", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -225,9 +225,23 @@ namespace BudgetFriend.API.Database.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<DateTime?>("EmailVerificationExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EmailVerificationTokenHash")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime?>("EmailVerifiedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("FirstName")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("GoogleSubject")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
 
                     b.Property<bool>("IsEmailVerified")
                         .HasColumnType("boolean");
@@ -244,7 +258,17 @@ namespace BudgetFriend.API.Database.Migrations
                     b.Property<string>("PasswordHash")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("PasswordResetExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PasswordResetTokenHash")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("GoogleSubject")
+                        .IsUnique();
 
                     b.HasIndex("NormalizedEmail")
                         .IsUnique();
@@ -252,9 +276,9 @@ namespace BudgetFriend.API.Database.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.Account", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.Account", b =>
                 {
-                    b.HasOne("BudgetFriend.API.Database.Entites.User", "User")
+                    b.HasOne("BudgetFriend.API.Database.Entities.User", "User")
                         .WithMany("Accounts")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -263,9 +287,9 @@ namespace BudgetFriend.API.Database.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.Category", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.Category", b =>
                 {
-                    b.HasOne("BudgetFriend.API.Database.Entites.User", "User")
+                    b.HasOne("BudgetFriend.API.Database.Entities.User", "User")
                         .WithMany("Categories")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -274,9 +298,9 @@ namespace BudgetFriend.API.Database.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.RefreshToken", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.RefreshToken", b =>
                 {
-                    b.HasOne("BudgetFriend.API.Database.Entites.User", "User")
+                    b.HasOne("BudgetFriend.API.Database.Entities.User", "User")
                         .WithMany("RefreshTokens")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -285,15 +309,15 @@ namespace BudgetFriend.API.Database.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.Transaction", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.Transaction", b =>
                 {
-                    b.HasOne("BudgetFriend.API.Database.Entites.Account", "Account")
+                    b.HasOne("BudgetFriend.API.Database.Entities.Account", "Account")
                         .WithMany("Transactions")
                         .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BudgetFriend.API.Database.Entites.Category", "Category")
+                    b.HasOne("BudgetFriend.API.Database.Entities.Category", "Category")
                         .WithMany("Transactions")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -303,27 +327,27 @@ namespace BudgetFriend.API.Database.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.Transfer", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.Transfer", b =>
                 {
-                    b.HasOne("BudgetFriend.API.Database.Entites.Account", "FromAccount")
+                    b.HasOne("BudgetFriend.API.Database.Entities.Account", "FromAccount")
                         .WithMany()
                         .HasForeignKey("FromAccountId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("BudgetFriend.API.Database.Entites.Transaction", "IncomingTransaction")
+                    b.HasOne("BudgetFriend.API.Database.Entities.Transaction", "IncomingTransaction")
                         .WithMany()
                         .HasForeignKey("IncomingTransactionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BudgetFriend.API.Database.Entites.Transaction", "OutgoingTransaction")
+                    b.HasOne("BudgetFriend.API.Database.Entities.Transaction", "OutgoingTransaction")
                         .WithMany()
                         .HasForeignKey("OutgoingTransactionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BudgetFriend.API.Database.Entites.Account", "ToAccount")
+                    b.HasOne("BudgetFriend.API.Database.Entities.Account", "ToAccount")
                         .WithMany()
                         .HasForeignKey("ToAccountId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -338,17 +362,17 @@ namespace BudgetFriend.API.Database.Migrations
                     b.Navigation("ToAccount");
                 });
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.Account", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.Account", b =>
                 {
                     b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.Category", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.Category", b =>
                 {
                     b.Navigation("Transactions");
                 });
 
-            modelBuilder.Entity("BudgetFriend.API.Database.Entites.User", b =>
+            modelBuilder.Entity("BudgetFriend.API.Database.Entities.User", b =>
                 {
                     b.Navigation("Accounts");
 
