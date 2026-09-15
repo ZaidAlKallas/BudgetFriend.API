@@ -32,8 +32,8 @@ public static class CreateTransferEndpoint
 
         var fromAccountBalance = await dbContext.Transactions
             .Where(t => t.AccountId == request.FromAccountId)
-            .SumAsync(t => (t.TransactionType == TransactionType.TransferOut || t.TransactionType == TransactionType.Expense) ?
-                    -t.Amount : t.Amount, cancellationToken) + fromAccount.InitialBalance;
+            .SumAsync(t => (t.TransactionType == TransactionType.Income || t.TransactionType == TransactionType.TransferIn) ?
+                    t.Amount : -t.Amount, cancellationToken) + fromAccount.InitialBalance;
         if (fromAccountBalance < request.FromAmount)
             return Results.BadRequest(new { message = "Insufficient balance in the source account." });
 

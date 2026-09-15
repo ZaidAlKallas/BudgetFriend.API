@@ -5,6 +5,6 @@ public record PaginationRequest(
     int PageSize = 20)
 {
     public const int MaxPageSize = 100;
-    public int ValidPageSize => Math.Min(PageSize, MaxPageSize);
-    public int Skip => (PageNumber - 1) * ValidPageSize;
+    public int ValidPageSize => Math.Clamp(PageSize, 1, MaxPageSize);
+    public int Skip => (Math.Max(PageNumber, 1) - 1) * ValidPageSize;
 }

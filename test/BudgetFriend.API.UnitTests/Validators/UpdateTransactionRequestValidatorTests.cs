@@ -37,4 +37,14 @@ public sealed class UpdateTransactionRequestValidatorTests
 
         result.ShouldHaveValidationErrorFor(x => x.TransactionDate);
     }
+
+    [Fact]
+    public void Validate_ShouldHaveError_WhenAmountIsNegative()
+    {
+        var request = new UpdateTransactionRequest(-50m, null, DateTime.UtcNow);
+
+        var result = _sut.TestValidate(request);
+
+        result.ShouldHaveValidationErrorFor(x => x.Amount);
+    }
 }

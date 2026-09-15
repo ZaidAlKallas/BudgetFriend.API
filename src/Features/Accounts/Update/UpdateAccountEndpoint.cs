@@ -19,28 +19,33 @@ public static class UpdateAccountEndpoint
         UpdateAccountRequest request,
         AppDbContext dbContext,
         ICurrentUser currentUser,
+        ICacheService cacheService,
         ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
+        var normalizedName = request.Name.Trim();
+
         var exists = await dbContext.Accounts
-                .AnyAsync(a => a.Name == request.Name && a.UserId == currentUser.UserId && a.Id != accountId, cancellationToken);
+                .AnyAsync(a => a.Name == normalizedName && a.UserId == currentUser.UserId && a.Id != accountId, cancellationToken);
 
         if (exists)
-            return Results.Conflict($"An account with the name '{request.Name}' already exists.");
+            return Results.Conflict($"An account with the name '{normalizedName}' already exists.");
 
         var totalUpdated = await dbContext.Accounts
             .Where(a => a.UserId == currentUser.UserId && a.Id == accountId)
             .ExecuteUpdateAsync(account => account
-                .SetProperty(a => a.Name, request.Name)
+                .SetProperty(a => a.Name, normalizedName)
                 .SetProperty(a => a.InitialBalance, request.InitialBalance),
                 cancellationToken);
         if (totalUpdated == 0)
             return Results.NotFound();
 
+        await CacheInvalidation.InvalidateFinancialDataAsync(cacheService, currentUser.UserId, cancellationToken);
+
         logger.LogInformation("Account {AccountId} updated by user {UserId}", accountId, currentUser.UserId);
         return Results.Ok(new UpdateAccountResponse(
                 accountId,
-                request.Name,
+                normalizedName,
                 request.InitialBalance
         ));
     }
