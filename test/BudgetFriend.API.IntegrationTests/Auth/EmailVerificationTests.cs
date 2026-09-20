@@ -43,6 +43,16 @@ public sealed class EmailVerificationTests(BudgetFriendApiFactory factory)
     }
 
     [Fact]
+    public async Task Register_ShouldSendVerificationEmailWithMobileDeepLink()
+    {
+        await RegisterAsync("ev-deeplink@example.com");
+
+        var email = EmailSender.SentEmails.Single(m => m.To == "ev-deeplink@example.com");
+
+        email.HtmlBody.Should().Contain("https://app.test.local/verify-email?token=");
+    }
+
+    [Fact]
     public async Task VerifyEmail_ShouldReturn200AndMarkVerified_WhenTokenIsValid()
     {
         await RegisterAsync("ev-valid@example.com");
