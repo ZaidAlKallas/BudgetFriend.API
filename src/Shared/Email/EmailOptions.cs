@@ -10,6 +10,8 @@ public sealed class EmailOptions
 
     public string BaseUrl { get; init; } = string.Empty;
 
+    public string? DeepLinkBaseUrl { get; init; }
+
     public string Authorization { get; set; } = string.Empty;
 
     public bool UseConsoleEmailSender { get; init; } = true;

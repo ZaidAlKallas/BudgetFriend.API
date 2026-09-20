@@ -27,6 +27,12 @@ internal static class AuthEmailBuilder
 
     private static string BuildLink(IOptions<EmailOptions> options, string path, string token)
     {
+        var deepLinkBaseUrl = options.Value.DeepLinkBaseUrl?.Trim().TrimEnd('/');
+        if (!string.IsNullOrWhiteSpace(deepLinkBaseUrl))
+        {
+            return $"{deepLinkBaseUrl}{path}?token={Uri.EscapeDataString(token)}";
+        }
+
         var baseUrl = options.Value.BaseUrl.TrimEnd('/');
         return $"{baseUrl}{path}?token={Uri.EscapeDataString(token)}";
     }

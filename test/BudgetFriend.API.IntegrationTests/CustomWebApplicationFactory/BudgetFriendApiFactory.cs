@@ -48,6 +48,7 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
                 ["Jwt:SecretKey"] = "test-secret-key-that-is-at-least-32-characters!",
                 ["Jwt:ExpirationMinutes"] = "60",
                 ["Email:BaseUrl"] = "https://test.local",
+                ["Email:DeepLinkBaseUrl"] = "https://app.test.local",
                 ["Google:ClientId"] = "test-client-id",
                 ["Serilog:MinimumLevel:Default"] = "Fatal",
                 ["Serilog:WriteTo:0:Name"] = "Console",
