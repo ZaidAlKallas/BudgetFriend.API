@@ -49,7 +49,7 @@ public sealed class EmailVerificationTests(BudgetFriendApiFactory factory)
     public async Task VerifyEmail_ShouldReturn200AndMarkVerified_WhenCodeIsValid()
     {
         await RegisterAsync("ev-valid@example.com");
-        var code = EmailSender.LatestCode("ev-valid@example.com");
+        var code = EmailSender.LatestCode("ev-valid@example.com", "Verify your email");
 
         var response = await _client.PostAsJsonAsync(
             ApiRoutes.Auth.VerifyEmail,
@@ -103,7 +103,7 @@ public sealed class EmailVerificationTests(BudgetFriendApiFactory factory)
     public async Task VerifyEmail_ShouldLockAccount_AfterMaxFailedAttempts()
     {
         await RegisterAsync("ev-lock@example.com");
-        var code = EmailSender.LatestCode("ev-lock@example.com");
+        var code = EmailSender.LatestCode("ev-lock@example.com", "Verify your email");
 
         for (var i = 1; i <= 5; i++)
         {
@@ -127,7 +127,7 @@ public sealed class EmailVerificationTests(BudgetFriendApiFactory factory)
     public async Task VerifyEmail_ShouldReturn400_WhenCodeIsReused()
     {
         await RegisterAsync("ev-reuse@example.com");
-        var code = EmailSender.LatestCode("ev-reuse@example.com");
+        var code = EmailSender.LatestCode("ev-reuse@example.com", "Verify your email");
 
         var first = await _client.PostAsJsonAsync(
             ApiRoutes.Auth.VerifyEmail,
@@ -148,7 +148,7 @@ public sealed class EmailVerificationTests(BudgetFriendApiFactory factory)
     public async Task ResendVerification_ShouldSendNewCodeAndInvalidateOldOne()
     {
         await RegisterAsync("ev-resend@example.com");
-        var initialCode = EmailSender.LatestCode("ev-resend@example.com");
+        var initialCode = EmailSender.LatestCode("ev-resend@example.com", "Verify your email");
 
         var resend = await _client.PostAsJsonAsync(
             ApiRoutes.Auth.ResendVerification,
@@ -156,7 +156,7 @@ public sealed class EmailVerificationTests(BudgetFriendApiFactory factory)
 
         resend.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var newCode = EmailSender.LatestCode("ev-resend@example.com");
+        var newCode = EmailSender.LatestCode("ev-resend@example.com", "Verify your email");
         newCode.Should().NotBe(initialCode);
 
         var oldCodeResponse = await _client.PostAsJsonAsync(
@@ -186,7 +186,7 @@ public sealed class EmailVerificationTests(BudgetFriendApiFactory factory)
     public async Task ResendVerification_ShouldNotSendEmailAgain_WhenAlreadyVerified()
     {
         await RegisterAsync("ev-verified@example.com");
-        var code = EmailSender.LatestCode("ev-verified@example.com");
+        var code = EmailSender.LatestCode("ev-verified@example.com", "Verify your email");
 
         var verify = await _client.PostAsJsonAsync(
             ApiRoutes.Auth.VerifyEmail,

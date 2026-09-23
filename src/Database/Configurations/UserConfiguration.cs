@@ -40,10 +40,13 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.EmailVerificationAttemptCount)
             .IsRequired();
 
-        builder.Property(x => x.PasswordResetTokenHash)
+        builder.Property(x => x.PasswordResetCodeHash)
             .HasMaxLength(256);
 
-        builder.Property(x => x.PasswordResetExpiresAtUtc);
+        builder.Property(x => x.PasswordResetCodeExpiresAtUtc);
+
+        builder.Property(x => x.PasswordResetAttemptCount)
+            .IsRequired();
 
         builder.Property(x => x.GoogleSubject)
             .HasMaxLength(128);

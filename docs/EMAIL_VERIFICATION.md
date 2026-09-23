@@ -1,11 +1,14 @@
-# Email Verification — Usage Guide
+# Email Verification & Password Reset — Usage Guide
 
-This guide describes how email verification works in the BudgetFriend API using a
-**6-digit verification code**, and how the surrounding security controls behave.
+This guide describes how email verification and password reset work in the
+BudgetFriend API using **6-digit codes sent by email**, and how the surrounding
+security controls behave.
 
 ---
 
 ## 1. How it works (overview)
+
+### Email verification
 
 ```
  User registers / requests a new code
@@ -31,32 +34,42 @@ This guide describes how email verification works in the BudgetFriend API using 
            → compares hash → marks IsEmailVerified = true
 ```
 
-Verification is a **server-side** operation. It works identically on web,
-mobile, and API clients because the user types the code themselves — there is no
-link to intercept or deep-link into the app.
+### Password reset
+
+```
+ POST /api/v1/auth/forgot-password            POST /api/v1/auth/reset-password
+ { "email": "..." }                    │      { "email":"...", "code":"123456",
+        │                               │        "newPassword":"..." }
+        │ generates a random 6-digit    │
+        │ code, stores hash + expiry    │
+        ▼                               │
+        Email with the code             │
+        │                               ▼
+        └──────────────────────────────> Server: validates shape → checks attempts
+                                          → checks expiry → compares hash
+                                          → hashes new password, revokes sessions
+```
+
+Verification and password reset are **server-side** operations. They work
+identically on web, mobile, and API clients because the user types the code
+themselves — there is no link to intercept or deep-link into the app.
 
 ---
 
 ## 2. Configuration
 
-The only configuration relevant to email verification is the SMTP/provider
-settings under the `Email` section (`EmailOptions`). Code-based verification does
-**not** use `Email:BaseUrl` or `Email:DeepLinkBaseUrl`.
-
-Those two settings now apply **only** to password-reset emails (`/reset-password`),
-which remain link-based:
-
-| Setting | Purpose |
-| --- | --- |
-| `Email:BaseUrl` | Web frontend origin used for password-reset links. |
-| `Email:DeepLinkBaseUrl` | Optional mobile deep-link origin; preferred over `BaseUrl` when set. |
+The only configuration relevant to these flows is the SMTP/provider settings
+under the `Email` section (`EmailOptions`). Code-based flows do **not** use any
+frontend/website URLs. `Email:BaseUrl` and `Email:DeepLinkBaseUrl` no longer
+exist.
 
 Tunable security values live in
-`src/Features/Authentication/EmailVerification/EmailVerificationDefaults.cs`:
+`src/Features/Authentication/EmailVerification/EmailVerificationDefaults.cs`
+and `src/Features/Authentication/PasswordReset/PasswordResetDefaults.cs`:
 
 | Constant | Value | Meaning |
 | --- | --- | --- |
-| `CodeLength` | `6` | Number of digits in the verification code. |
+| `CodeLength` | `6` | Number of digits in the code. |
 | `MaxAttempts` | `5` | Failed attempts allowed before the code is invalidated. |
 | `Expiry` | `15 minutes` | Validity window of a code. |
 
@@ -108,27 +121,64 @@ account exists). Rate-limited by the `EmailPolicy` limiter.
 Generates a fresh code: the previous code is replaced, its expiry is reset to
 15 minutes, and the failed-attempt counter is reset to zero.
 
+### `POST /api/v1/auth/forgot-password`
+Body:
+```json
+{ "email": "user@example.com" }
+```
+
+Always returns the same generic success message (does not reveal whether an
+account exists). Rate-limited by the `EmailPolicy` limiter.
+
+Generates a 6-digit code, stores its hash + expiry, resets the failed-attempt
+counter, and emails the code.
+
+### `POST /api/v1/auth/reset-password`
+Body:
+```json
+{ "email": "user@example.com", "code": "123456", "newPassword": "NewPassword1!" }
+```
+
+Rate-limited by the `ResetPasswordPolicy` limiter (10 requests/minute by default).
+
+| Response | Meaning |
+| --- | --- |
+| `200 OK` | Password changed; reset code and counter cleared; all sessions revoked. |
+| `400 Bad Request` | Invalid/expired code, or too many failed attempts. |
+| `429 Too Many Requests` | Rate limit exceeded. |
+
+Failure counting (per account) is identical to email verification:
+
+1. Wrong code → `PasswordResetAttemptCount` is incremented, and the response
+   reports how many attempts remain.
+2. When the counter reaches `MaxAttempts` (5) the code is **immediately
+   invalidated** and the user must request a new one.
+3. An expired code is cleared on submission and returns an expiry message.
+
 ---
 
 ## 4. Security characteristics
 
 - **Cryptographic randomness**: codes come from `RandomNumberGenerator`
   (`SecurityTokens.GenerateNumericCode`), not a seeded PRNG.
-- **Hashed at rest**: only the SHA-256 hash of the code is stored; the plaintext
+- **Hashed at rest**: only the SHA-256 hash of a code is stored; the plaintext
   code is never persisted and is only present in the outbound email.
-- **Expiry**: each code is valid for 15 minutes (`EmailVerificationDefaults.Expiry`).
+- **Expiry**: each code is valid for 15 minutes.
 - **Brute-force protection (two layers)**:
   1. Per-account attempt counter — after 5 wrong attempts the code is
-     invalidated (`EmailVerificationDefaults.MaxAttempts`, `VerifyEmailEndpoint`).
+     invalidated (`MaxAttempts`).
   2. IP-level fixed-window rate limiting on `/verify-email`
-     (`VerifyEmailPolicy`, `ServiceCollectionExtensions`.
-- **Resend throttling**: `/resend-verification` is limited by `EmailPolicy`
-  (5 requests / 10 minutes by default).
+     (`VerifyEmailPolicy`) and `/reset-password` (`ResetPasswordPolicy`).
+- **Resend/Delivery throttling**: `/resend-verification` and
+  `/forgot-password` are limited by `EmailPolicy` (5 requests / 10 minutes by
+  default).
 - **Single-use**: a used or replaced code is cleared from the database, so
   replaying it fails.
-- **No user enumeration**: resend always returns the same generic message, and
-  invalid codes return the same generic error for unknown users and verified
-  accounts.
+- **No user enumeration**: resend and forgot-password always return the same
+  generic message, and invalid codes return the same generic error for unknown
+  users.
+- **Session revoke**: a successful password reset revokes every refresh token
+  belonging to the account.
 
 ---
 
@@ -138,13 +188,16 @@ The `User` entity stores (see `src/Database/Entities/User.cs`):
 
 | Column | Purpose |
 | --- | --- |
-| `EmailVerificationCodeHash` | SHA-256 hash of the active code. |
-| `EmailVerificationCodeExpiresAtUtc` | When the code stops being valid. |
-| `EmailVerificationAttemptCount` | Failed attempts against the current code. |
+| `EmailVerificationCodeHash` | SHA-256 hash of the active verification code. |
+| `EmailVerificationCodeExpiresAtUtc` | When the verification code stops being valid. |
+| `EmailVerificationAttemptCount` | Failed attempts against the verification code. |
+| `PasswordResetCodeHash` | SHA-256 hash of the active reset code. |
+| `PasswordResetCodeExpiresAtUtc` | When the reset code stops being valid. |
+| `PasswordResetAttemptCount` | Failed attempts against the reset code. |
 
-The schema change is shipped by the
-`ConvertEmailVerificationToSixDigitCode` EF migration (renames the old token
-columns and adds the attempt counter).
+The schema changes are shipped by the `ConvertEmailVerificationToSixDigitCode`
+and `ConvertPasswordResetToSixDigitCode` EF migrations (they rename the old
+token columns and add the attempt counters).
 
 ---
 
@@ -154,10 +207,15 @@ columns and adds the attempt counter).
   - `test/BudgetFriend.API.UnitTests/Authentication/SecurityTokensTests.cs` —
     code format, custom length, randomness.
   - `test/BudgetFriend.API.UnitTests/Authentication/AuthEmailBuilderTests.cs` —
-    code message contains the code and no links.
+    code messages contain the code and no links.
   - `test/BudgetFriend.API.UnitTests/Validators/VerifyEmailValidatorTests.cs` —
     email/code shape validation.
+  - `test/BudgetFriend.API.UnitTests/Validators/ResetPasswordValidatorTests.cs` —
+    email/code/password shape validation.
 - Integration tests:
   - `test/BudgetFriend.API.IntegrationTests/Auth/EmailVerificationTests.cs` —
     registration email, valid/invalid/expired codes, lockout after max attempts,
     single-use, resend semantics.
+  - `test/BudgetFriend.API.IntegrationTests/Auth/PasswordResetTests.cs` —
+    forgot-password email, valid/invalid/expired codes, lockout, single-use,
+    rejected weak passwords, session revocation.

@@ -18,9 +18,11 @@ public sealed class User
 
     public int EmailVerificationAttemptCount { get; set; }
 
-    public string? PasswordResetTokenHash { get; set; }
+    public string? PasswordResetCodeHash { get; set; }
 
-    public DateTime? PasswordResetExpiresAtUtc { get; set; }
+    public DateTime? PasswordResetCodeExpiresAtUtc { get; set; }
+
+    public int PasswordResetAttemptCount { get; set; }
 
     public string? GoogleSubject { get; set; }
 
