@@ -1,114 +1,113 @@
-# Email Verification & Deep Links — Usage Guide
+# Email Verification & Password Reset — Usage Guide
 
-This guide describes how email-based verification works in the BudgetFriend API, how the links are built, and what is required to make the flow work for both web browsers and mobile apps.
+This guide describes how email verification and password reset work in the
+BudgetFriend API using **6-digit codes sent by email**, and how the surrounding
+security controls behave.
 
 ---
 
 ## 1. How it works (overview)
 
+### Email verification
+
 ```
- User registers / requests re-verification
+ User registers / requests a new code
         │
         ▼
- ┌────────────────────────────────────┐
- │ /api/v1/auth/register              │
- │ /api/v1/auth/resend-verification   │
- └──────────────┬─────────────────────┘
-                │  generates a single-use token
-                │  stores only its SHA-256 hash + expiry
+ ┌───────────────────────────────────────┐
+ │ POST /api/v1/auth/register            │
+ │ POST /api/v1/auth/resend-verification │
+ └──────────────┬────────────────────────┘
+                │  generates a random 6-digit code
+                │  stores its SHA-256 hash + expiry (15 min)
+                │  resets the failed-attempt counter
                 ▼
-        Email with a link
-        (built by AuthEmailBuilder)
-                │
-        ┌───────┴────────┐
-        ▼                ▼
-   Web frontend      Mobile app
-   (browser)         (deep link)
-        │                │
-        └───────┬────────┘
-                ▼
-   POST /api/v1/auth/verify-email { "token": "..." }
+        Email with the code
+        (no link is used)
                 │
                 ▼
-   Server verifies hash + expiry, marks IsEmailVerified = true
+   POST /api/v1/auth/verify-email
+   { "email": "...", "code": "123456" }
+                │
+                ▼
+   Server: validates shape → checks attempts → checks expiry
+           → compares hash → marks IsEmailVerified = true
 ```
 
-Verification is a **server-side** operation. It works identically regardless of
-whether the link is opened in a browser or delivered to the native mobile app —
-the endpoint is stateless with respect to the device and does **not** require an
-authenticated session.
+### Password reset
+
+```
+ POST /api/v1/auth/forgot-password            POST /api/v1/auth/reset-password
+ { "email": "..." }                    │      { "email":"...", "code":"123456",
+        │                               │        "newPassword":"..." }
+        │ generates a random 6-digit    │
+        │ code, stores hash + expiry    │
+        ▼                               │
+        Email with the code             │
+        │                               ▼
+        └──────────────────────────────> Server: validates shape → checks attempts
+                                          → checks expiry → compares hash
+                                          → hashes new password, revokes sessions
+```
+
+Verification and password reset are **server-side** operations. They work
+identically on web, mobile, and API clients because the user types the code
+themselves — there is no link to intercept or deep-link into the app.
 
 ---
 
 ## 2. Configuration
 
-All settings live in the `Email` section (`EmailOptions`, `src/Shared/Email/EmailOptions.cs`).
+The only configuration relevant to these flows is the SMTP/provider settings
+under the `Email` section (`EmailOptions`). Code-based flows do **not** use any
+frontend/website URLs. `Email:BaseUrl` and `Email:DeepLinkBaseUrl` no longer
+exist.
 
-| Setting | Example | Purpose |
+Tunable security values live in
+`src/Features/Authentication/EmailVerification/EmailVerificationDefaults.cs`
+and `src/Features/Authentication/PasswordReset/PasswordResetDefaults.cs`:
+
+| Constant | Value | Meaning |
 | --- | --- | --- |
-| `Email:BaseUrl` | `https://budgetfriend.example.com` | Web frontend origin. Used when `DeepLinkBaseUrl` is empty. |
-| `Email:DeepLinkBaseUrl` | `https://budgetfriend.app` | Dedicated deep-link origin (mobile). **Preferred** when set. |
-
-Link-building precedence (`AuthEmailBuilder.BuildLink`):
-
-1. If `Email:DeepLinkBaseUrl` is set, all email links use it.
-2. Otherwise `Email:BaseUrl` is used.
-
-This means the API can point the email at a mobile-friendly URL (Universal/App
-Links) without changing the web frontend URL.
-
-Example:
-
-```json
-"Email": {
-  "BaseUrl": "https://budgetfriend.example.com",
-  "DeepLinkBaseUrl": "https://budgetfriend.app",
-  "Authorization": "re_xxxxxxxxx"
-}
-```
+| `CodeLength` | `6` | Number of digits in the code. |
+| `MaxAttempts` | `5` | Failed attempts allowed before the code is invalidated. |
+| `Expiry` | `15 minutes` | Validity window of a code. |
 
 ---
 
-## 3. Link format
-
-```
-{BaseUrl | DeepLinkBaseUrl}/verify-email?token=<url-encoded-token>
-{BaseUrl | DeepLinkBaseUrl}/reset-password?token=<url-encoded-token>
-```
-
-The token is always URL-encoded (`Uri.EscapeDataString`) before being placed in
-the query string.
-
-Generated links:
-
-- Email verification -> `/verify-email?token=...`
-- Password reset    -> `/reset-password?token=...`
-
----
-
-## 4. Endpoints
+## 3. Endpoints
 
 ### `POST /api/v1/auth/register`
-Creates an account, generates a verification token, stores its hash, and sends
-the verification email.
+Creates an account, generates a 6-digit code, stores its hash + expiry, and sends
+the code by email.
 
 | Response | Meaning |
 | --- | --- |
-| `201 Created` | Account created; verification email sent. |
+| `201 Created` | Account created; code emailed. |
 | `409 Conflict` | A user with this email already exists. |
+| `400 Bad Request` | Invalid payload. |
 
 ### `POST /api/v1/auth/verify-email`
 Body:
 ```json
-{ "token": "RWd_2eMq_p87p4qhy7904uOXJ8E5CW1UV5OvMgasXfw" }
+{ "email": "user@example.com", "code": "123456" }
 ```
+
+Rate-limited by the `VerifyEmailPolicy` limiter (10 requests/minute by default).
 
 | Response | Meaning |
 | --- | --- |
-| `200 OK` | Email marked verified; token cleared. |
-| `400 Bad Request` | Token invalid, already used, or expired. |
+| `200 OK` | Email marked verified; code and counter cleared. |
+| `400 Bad Request` | Invalid/expired code, or too many failed attempts. |
+| `429 Too Many Requests` | Rate limit exceeded. |
 
-The token is matched by its SHA-256 hash, so plaintext tokens are never stored.
+Failure counting (per account):
+
+1. Wrong code → `EmailVerificationAttemptCount` is incremented, and the response
+   reports how many attempts remain.
+2. When the counter reaches `MaxAttempts` (5) the code is **immediately
+   invalidated** and the user must request a new one.
+3. An expired code is cleared on submission and returns an expiry message.
 
 ### `POST /api/v1/auth/resend-verification`
 Body:
@@ -119,74 +118,104 @@ Body:
 Always returns the same generic success message (does not reveal whether an
 account exists). Rate-limited by the `EmailPolicy` limiter.
 
-### `POST /api/v1/auth/forgot-password` / `POST /api/v1/auth/reset-password`
-Password reset uses the same link-builder and token mechanics (`/reset-password`),
-with a 1-hour expiry and session revocation after a successful reset.
+Generates a fresh code: the previous code is replaced, its expiry is reset to
+15 minutes, and the failed-attempt counter is reset to zero.
 
----
-
-## 5. Browser behavior
-
-1. User clicks the link in the email.
-2. The browser opens `https://<frontend>/verify-email?token=...`.
-3. The web page reads the `token` query parameter and calls
-   `POST /api/v1/auth/verify-email`.
-4. The server verifies the hash + expiry and marks the account verified.
-5. The account passes verification on all subsequent requests — including the
-   native app, which picks up `IsEmailVerified` on its next profile/session refresh.
-
-> Requirements: the web frontend must expose a `/verify-email` route (and
-> `/reset-password`) that consumes the `token` query parameter and calls the API.
-> Verification does not require the visitor to be logged in.
-
----
-
-## 6. Mobile behavior (deep links)
-
-For the link to open the **native app** instead of the browser, configure the
-`Email:DeepLinkBaseUrl` origin for platform deep linking:
-
-| Platform | Mechanism | Requirement on the app |
-| --- | --- | --- |
-| iOS | Universal Links | `apple-app-site-association` served at `https://budgetfriend.app/.well-known/` and the domain associated in the app's entitlements. |
-| Android | App Links | `assetlinks.json` served at `https://budgetfriend.app/.well-known/` and the intent filter declared in the app's manifest. |
-
-Required by both: the two endpoints of the deep link (`/verify-email`,
-`/reset-password`) must be registered in the app.
-
-**Fallback behavior:** if the app is not installed, the OS opens the browser at
-the same URL (the deep-link origin should also serve the web flow). This is why
-the deep-link base URL should be a real, served origin.
-
-In the app, read the `token` query parameter from the incoming URL and call
-`POST /api/v1/auth/verify-email` with it. No authentication token is needed.
-
----
-
-## 7. Security characteristics
-
-- **High-entropy tokens**: 256-bit random (`SecurityTokens.Generate`), not guessable.
-- **Hashed at rest**: only SHA-256 hashes are stored; plaintext is never stored
-  and cannot be recovered from the database.
-- **Single-use**: consumed tokens are cleared (`EmailVerificationTokenHash = null`),
-  so replaying the same link fails.
-- **Expiry**: verification links expire after 24 hours; a new one is generated by
-  `/resend-verification` and invalidates the previous token.
-- **Rate limiting**: `/resend-verification` and `/forgot-password` use the
-  `EmailPolicy` limiter.
-
----
-
-## 8. Testing
-
-- Unit tests: `test/BudgetFriend.API.UnitTests/Authentication/AuthEmailBuilderTests.cs`
-  cover deep-link precedence, fallback, trailing slashes, and URL encoding.
-- Integration tests: `test/BudgetFriend.API.IntegrationTests/Auth/EmailVerificationTests.cs`
-  cover registration email content, verify flow, invalid/expired/reused tokens,
-  and resend semantics.
-
-The integration test factory runs with:
+### `POST /api/v1/auth/forgot-password`
+Body:
 ```json
-"Email:BaseUrl": "https://test.local",
-"Email:DeepLinkBaseUrl": "https://app.test.local"
+{ "email": "user@example.com" }
 ```
+
+Always returns the same generic success message (does not reveal whether an
+account exists). Rate-limited by the `EmailPolicy` limiter.
+
+Generates a 6-digit code, stores its hash + expiry, resets the failed-attempt
+counter, and emails the code.
+
+### `POST /api/v1/auth/reset-password`
+Body:
+```json
+{ "email": "user@example.com", "code": "123456", "newPassword": "NewPassword1!" }
+```
+
+Rate-limited by the `ResetPasswordPolicy` limiter (10 requests/minute by default).
+
+| Response | Meaning |
+| --- | --- |
+| `200 OK` | Password changed; reset code and counter cleared; all sessions revoked. |
+| `400 Bad Request` | Invalid/expired code, or too many failed attempts. |
+| `429 Too Many Requests` | Rate limit exceeded. |
+
+Failure counting (per account) is identical to email verification:
+
+1. Wrong code → `PasswordResetAttemptCount` is incremented, and the response
+   reports how many attempts remain.
+2. When the counter reaches `MaxAttempts` (5) the code is **immediately
+   invalidated** and the user must request a new one.
+3. An expired code is cleared on submission and returns an expiry message.
+
+---
+
+## 4. Security characteristics
+
+- **Cryptographic randomness**: codes come from `RandomNumberGenerator`
+  (`SecurityTokens.GenerateNumericCode`), not a seeded PRNG.
+- **Hashed at rest**: only the SHA-256 hash of a code is stored; the plaintext
+  code is never persisted and is only present in the outbound email.
+- **Expiry**: each code is valid for 15 minutes.
+- **Brute-force protection (two layers)**:
+  1. Per-account attempt counter — after 5 wrong attempts the code is
+     invalidated (`MaxAttempts`).
+  2. IP-level fixed-window rate limiting on `/verify-email`
+     (`VerifyEmailPolicy`) and `/reset-password` (`ResetPasswordPolicy`).
+- **Resend/Delivery throttling**: `/resend-verification` and
+  `/forgot-password` are limited by `EmailPolicy` (5 requests / 10 minutes by
+  default).
+- **Single-use**: a used or replaced code is cleared from the database, so
+  replaying it fails.
+- **No user enumeration**: resend and forgot-password always return the same
+  generic message, and invalid codes return the same generic error for unknown
+  users.
+- **Session revoke**: a successful password reset revokes every refresh token
+  belonging to the account.
+
+---
+
+## 5. Database
+
+The `User` entity stores (see `src/Database/Entities/User.cs`):
+
+| Column | Purpose |
+| --- | --- |
+| `EmailVerificationCodeHash` | SHA-256 hash of the active verification code. |
+| `EmailVerificationCodeExpiresAtUtc` | When the verification code stops being valid. |
+| `EmailVerificationAttemptCount` | Failed attempts against the verification code. |
+| `PasswordResetCodeHash` | SHA-256 hash of the active reset code. |
+| `PasswordResetCodeExpiresAtUtc` | When the reset code stops being valid. |
+| `PasswordResetAttemptCount` | Failed attempts against the reset code. |
+
+The schema changes are shipped by the `ConvertEmailVerificationToSixDigitCode`
+and `ConvertPasswordResetToSixDigitCode` EF migrations (they rename the old
+token columns and add the attempt counters).
+
+---
+
+## 6. Testing
+
+- Unit tests:
+  - `test/BudgetFriend.API.UnitTests/Authentication/SecurityTokensTests.cs` —
+    code format, custom length, randomness.
+  - `test/BudgetFriend.API.UnitTests/Authentication/AuthEmailBuilderTests.cs` —
+    code messages contain the code and no links.
+  - `test/BudgetFriend.API.UnitTests/Validators/VerifyEmailValidatorTests.cs` —
+    email/code shape validation.
+  - `test/BudgetFriend.API.UnitTests/Validators/ResetPasswordValidatorTests.cs` —
+    email/code/password shape validation.
+- Integration tests:
+  - `test/BudgetFriend.API.IntegrationTests/Auth/EmailVerificationTests.cs` —
+    registration email, valid/invalid/expired codes, lockout after max attempts,
+    single-use, resend semantics.
+  - `test/BudgetFriend.API.IntegrationTests/Auth/PasswordResetTests.cs` —
+    forgot-password email, valid/invalid/expired codes, lockout, single-use,
+    rejected weak passwords, session revocation.

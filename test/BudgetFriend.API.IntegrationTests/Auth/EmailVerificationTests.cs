@@ -29,7 +29,7 @@ public sealed class EmailVerificationTests(BudgetFriendApiFactory factory)
     }
 
     [Fact]
-    public async Task Register_ShouldCreateUnverifiedUser_AndSendVerificationEmail()
+    public async Task Register_ShouldCreateUnverifiedUser_AndSendSixDigitCode()
     {
         await RegisterAsync("ev-create@example.com");
 
@@ -37,84 +37,106 @@ public sealed class EmailVerificationTests(BudgetFriendApiFactory factory)
 
         user.Should().NotBeNull();
         user!.IsEmailVerified.Should().BeFalse();
-        user.EmailVerificationTokenHash.Should().NotBeNullOrWhiteSpace();
-        user.EmailVerificationExpiresAtUtc.Should().BeAfter(DateTime.UtcNow);
-        EmailSender.SentEmails.Should().ContainSingle(m => m.To == "ev-create@example.com");
+        user.EmailVerificationCodeHash.Should().NotBeNullOrWhiteSpace();
+        user.EmailVerificationCodeExpiresAtUtc.Should().BeAfter(DateTime.UtcNow);
+        user.EmailVerificationAttemptCount.Should().Be(0);
+
+        var email = EmailSender.SentEmails.Single(m => m.To == "ev-create@example.com");
+        TestEmailExtensions.ExtractCode(email.HtmlBody).Should().MatchRegex("^[0-9]{6}$");
     }
 
     [Fact]
-    public async Task Register_ShouldSendVerificationEmailWithMobileDeepLink()
-    {
-        await RegisterAsync("ev-deeplink@example.com");
-
-        var email = EmailSender.SentEmails.Single(m => m.To == "ev-deeplink@example.com");
-
-        email.HtmlBody.Should().Contain("https://app.test.local/verify-email?token=");
-    }
-
-    [Fact]
-    public async Task VerifyEmail_ShouldReturn200AndMarkVerified_WhenTokenIsValid()
+    public async Task VerifyEmail_ShouldReturn200AndMarkVerified_WhenCodeIsValid()
     {
         await RegisterAsync("ev-valid@example.com");
-        var token = EmailSender.LatestToken("ev-valid@example.com", "verify-email");
+        var code = EmailSender.LatestCode("ev-valid@example.com", "Verify your email");
 
         var response = await _client.PostAsJsonAsync(
             ApiRoutes.Auth.VerifyEmail,
-            new VerifyEmailRequest(token));
+            new VerifyEmailRequest("ev-valid@example.com", code));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var user = await TestDb.FindUserAsync(factory, "ev-valid@example.com");
         user!.IsEmailVerified.Should().BeTrue();
         user.EmailVerifiedAtUtc.Should().NotBeNull();
-        user.EmailVerificationTokenHash.Should().BeNull();
+        user.EmailVerificationCodeHash.Should().BeNull();
     }
 
     [Fact]
-    public async Task VerifyEmail_ShouldReturn400_WhenTokenIsInvalid()
+    public async Task VerifyEmail_ShouldReturn400_WhenCodeIsInvalid_AndIncrementAttempts()
     {
         await RegisterAsync("ev-invalid@example.com");
 
         var response = await _client.PostAsJsonAsync(
             ApiRoutes.Auth.VerifyEmail,
-            new VerifyEmailRequest("not-a-real-token"));
+            new VerifyEmailRequest("ev-invalid@example.com", "000000"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var user = await TestDb.FindUserAsync(factory, "ev-invalid@example.com");
         user!.IsEmailVerified.Should().BeFalse();
+        user.EmailVerificationCodeHash.Should().NotBeNull();
+        user.EmailVerificationAttemptCount.Should().Be(1);
     }
 
     [Fact]
-    public async Task VerifyEmail_ShouldReturn400_WhenTokenIsExpired()
+    public async Task VerifyEmail_ShouldReturn400_WhenCodeIsExpired()
     {
         await RegisterAsync("ev-expired@example.com");
-        var token = EmailSender.LatestToken("ev-expired@example.com", "verify-email");
         var user = await TestDb.FindUserAsync(factory, "ev-expired@example.com");
 
         await TestDb.ExpireEmailVerificationAsync(factory, user!.Id);
 
         var response = await _client.PostAsJsonAsync(
             ApiRoutes.Auth.VerifyEmail,
-            new VerifyEmailRequest(token));
+            new VerifyEmailRequest("ev-expired@example.com", "123456"));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var after = await TestDb.FindUserAsync(factory, "ev-expired@example.com");
         after!.IsEmailVerified.Should().BeFalse();
-        after.EmailVerificationTokenHash.Should().BeNull();
+        after.EmailVerificationCodeHash.Should().BeNull();
     }
 
     [Fact]
-    public async Task VerifyEmail_ShouldReturn400_WhenTokenIsReused()
+    public async Task VerifyEmail_ShouldLockAccount_AfterMaxFailedAttempts()
+    {
+        await RegisterAsync("ev-lock@example.com");
+        var code = EmailSender.LatestCode("ev-lock@example.com", "Verify your email");
+
+        for (var i = 1; i <= 5; i++)
+        {
+            var response = await _client.PostAsJsonAsync(
+                ApiRoutes.Auth.VerifyEmail,
+                new VerifyEmailRequest("ev-lock@example.com", "000000"));
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        }
+
+        var user = await TestDb.FindUserAsync(factory, "ev-lock@example.com");
+        user!.IsEmailVerified.Should().BeFalse();
+        user.EmailVerificationCodeHash.Should().BeNull();
+
+        var afterLock = await _client.PostAsJsonAsync(
+            ApiRoutes.Auth.VerifyEmail,
+            new VerifyEmailRequest("ev-lock@example.com", code));
+        afterLock.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task VerifyEmail_ShouldReturn400_WhenCodeIsReused()
     {
         await RegisterAsync("ev-reuse@example.com");
-        var token = EmailSender.LatestToken("ev-reuse@example.com", "verify-email");
+        var code = EmailSender.LatestCode("ev-reuse@example.com", "Verify your email");
 
-        var first = await _client.PostAsJsonAsync(ApiRoutes.Auth.VerifyEmail, new VerifyEmailRequest(token));
+        var first = await _client.PostAsJsonAsync(
+            ApiRoutes.Auth.VerifyEmail,
+            new VerifyEmailRequest("ev-reuse@example.com", code));
         first.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var second = await _client.PostAsJsonAsync(ApiRoutes.Auth.VerifyEmail, new VerifyEmailRequest(token));
+        var second = await _client.PostAsJsonAsync(
+            ApiRoutes.Auth.VerifyEmail,
+            new VerifyEmailRequest("ev-reuse@example.com", code));
 
         second.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
@@ -123,10 +145,10 @@ public sealed class EmailVerificationTests(BudgetFriendApiFactory factory)
     }
 
     [Fact]
-    public async Task ResendVerification_ShouldSendNewTokenAndInvalidateOldOne()
+    public async Task ResendVerification_ShouldSendNewCodeAndInvalidateOldOne()
     {
         await RegisterAsync("ev-resend@example.com");
-        var initialToken = EmailSender.LatestToken("ev-resend@example.com", "verify-email");
+        var initialCode = EmailSender.LatestCode("ev-resend@example.com", "Verify your email");
 
         var resend = await _client.PostAsJsonAsync(
             ApiRoutes.Auth.ResendVerification,
@@ -134,14 +156,18 @@ public sealed class EmailVerificationTests(BudgetFriendApiFactory factory)
 
         resend.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var newToken = EmailSender.LatestToken("ev-resend@example.com", "verify-email");
-        newToken.Should().NotBe(initialToken);
+        var newCode = EmailSender.LatestCode("ev-resend@example.com", "Verify your email");
+        newCode.Should().NotBe(initialCode);
 
-        var oldTokenResponse = await _client.PostAsJsonAsync(ApiRoutes.Auth.VerifyEmail, new VerifyEmailRequest(initialToken));
-        oldTokenResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var oldCodeResponse = await _client.PostAsJsonAsync(
+            ApiRoutes.Auth.VerifyEmail,
+            new VerifyEmailRequest("ev-resend@example.com", initialCode));
+        oldCodeResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var newTokenResponse = await _client.PostAsJsonAsync(ApiRoutes.Auth.VerifyEmail, new VerifyEmailRequest(newToken));
-        newTokenResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var newCodeResponse = await _client.PostAsJsonAsync(
+            ApiRoutes.Auth.VerifyEmail,
+            new VerifyEmailRequest("ev-resend@example.com", newCode));
+        newCodeResponse.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [Fact]
@@ -160,9 +186,11 @@ public sealed class EmailVerificationTests(BudgetFriendApiFactory factory)
     public async Task ResendVerification_ShouldNotSendEmailAgain_WhenAlreadyVerified()
     {
         await RegisterAsync("ev-verified@example.com");
-        var token = EmailSender.LatestToken("ev-verified@example.com", "verify-email");
+        var code = EmailSender.LatestCode("ev-verified@example.com", "Verify your email");
 
-        var verify = await _client.PostAsJsonAsync(ApiRoutes.Auth.VerifyEmail, new VerifyEmailRequest(token));
+        var verify = await _client.PostAsJsonAsync(
+            ApiRoutes.Auth.VerifyEmail,
+            new VerifyEmailRequest("ev-verified@example.com", code));
         verify.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var resend = await _client.PostAsJsonAsync(

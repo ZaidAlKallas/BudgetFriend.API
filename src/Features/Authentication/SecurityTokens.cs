@@ -5,13 +5,10 @@ namespace BudgetFriend.API.Features.Authentication;
 
 internal static class SecurityTokens
 {
-    public static string Generate()
+    public static string GenerateNumericCode(int length = 6)
     {
-        var bytes = RandomNumberGenerator.GetBytes(32);
-        return Convert.ToBase64String(bytes)
-            .TrimEnd('=')
-            .Replace('+', '-')
-            .Replace('/', '_');
+        var maxExclusive = (int)Math.Pow(10, length);
+        return RandomNumberGenerator.GetInt32(0, maxExclusive).ToString("D" + length);
     }
 
     public static string Hash(string token)

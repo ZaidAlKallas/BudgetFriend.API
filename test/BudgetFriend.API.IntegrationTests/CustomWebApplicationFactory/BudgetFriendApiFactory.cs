@@ -47,8 +47,6 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
                 ["Jwt:Audience"] = "TestAudience",
                 ["Jwt:SecretKey"] = "test-secret-key-that-is-at-least-32-characters!",
                 ["Jwt:ExpirationMinutes"] = "60",
-                ["Email:BaseUrl"] = "https://test.local",
-                ["Email:DeepLinkBaseUrl"] = "https://app.test.local",
                 ["Google:ClientId"] = "test-client-id",
                 ["Serilog:MinimumLevel:Default"] = "Fatal",
                 ["Serilog:WriteTo:0:Name"] = "Console",
@@ -106,6 +104,20 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
                 {
                     opt.PermitLimit = 1000;
                     opt.Window = TimeSpan.FromMinutes(10);
+                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    opt.QueueLimit = 0;
+                });
+                options.AddFixedWindowLimiter("VerifyEmailPolicy", opt =>
+                {
+                    opt.PermitLimit = 1000;
+                    opt.Window = TimeSpan.FromMinutes(1);
+                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    opt.QueueLimit = 0;
+                });
+                options.AddFixedWindowLimiter("ResetPasswordPolicy", opt =>
+                {
+                    opt.PermitLimit = 1000;
+                    opt.Window = TimeSpan.FromMinutes(1);
                     opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     opt.QueueLimit = 0;
                 });

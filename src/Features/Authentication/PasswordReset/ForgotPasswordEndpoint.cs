@@ -1,5 +1,4 @@
 using BudgetFriend.API.Shared.Email;
-using Microsoft.Extensions.Options;
 
 namespace BudgetFriend.API.Features.Authentication.PasswordReset;
 
@@ -10,15 +9,14 @@ public static class ForgotPasswordEndpoint
             .WithValidation<ForgotPasswordRequest>()
             .RequireRateLimiting("EmailPolicy")
             .WithName("ForgotPassword")
-            .WithSummary("Request a password reset link")
-            .WithDescription("Sends a password reset link to the given address if an account exists")
+            .WithSummary("Request a password reset code")
+            .WithDescription("Sends a password reset code to the given address if an account exists")
             .ProducesProblem(StatusCodes.Status429TooManyRequests);
 
     private static async Task<IResult> HandleAsync(
         ForgotPasswordRequest request,
         AppDbContext dbContext,
         IEmailSender emailSender,
-        IOptions<EmailOptions> emailOptions,
         ILogger<Program> logger,
         CancellationToken cancellationToken)
     {
@@ -30,12 +28,13 @@ public static class ForgotPasswordEndpoint
 
         if (user is null)
         {
-            return Results.Ok(new { message = "If this email belongs to an account, a password reset link has been sent." });
+            return Results.Ok(new { message = "If this email belongs to an account, a password reset code has been sent." });
         }
 
-        var token = SecurityTokens.Generate();
-        user.PasswordResetTokenHash = SecurityTokens.Hash(token);
-        user.PasswordResetExpiresAtUtc = DateTime.UtcNow.AddHours(1);
+        var code = SecurityTokens.GenerateNumericCode();
+        user.PasswordResetCodeHash = SecurityTokens.Hash(code);
+        user.PasswordResetCodeExpiresAtUtc = DateTime.UtcNow.Add(PasswordResetDefaults.Expiry);
+        user.PasswordResetAttemptCount = 0;
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -44,7 +43,7 @@ public static class ForgotPasswordEndpoint
             await emailSender.SendAsync(
                 user.Email,
                 "Reset your password",
-                AuthEmailBuilder.BuildPasswordResetMessage(emailOptions, token),
+                AuthEmailBuilder.BuildPasswordResetCodeMessage(code),
                 cancellationToken);
         }
         catch (Exception ex)
@@ -52,6 +51,6 @@ public static class ForgotPasswordEndpoint
             logger.LogWarning(ex, "Failed to send password reset email to {Email}", user.Email);
         }
 
-        return Results.Ok(new { message = "If this email belongs to an account, a password reset link has been sent." });
+        return Results.Ok(new { message = "If this email belongs to an account, a password reset code has been sent." });
     }
 }

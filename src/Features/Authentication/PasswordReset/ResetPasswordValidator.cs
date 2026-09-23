@@ -6,9 +6,14 @@ public sealed class ResetPasswordValidator : AbstractValidator<ResetPasswordRequ
 {
     public ResetPasswordValidator()
     {
-        RuleFor(x => x.Token)
-            .NotEmpty().WithMessage("Token is required.")
-            .MaximumLength(2048).WithMessage("Token must be 2048 characters or fewer.");
+        RuleFor(x => x.Email)
+            .NotEmpty().WithMessage("Email is required.")
+            .EmailAddress().WithMessage("Email must be a valid email address.")
+            .MaximumLength(256).WithMessage("Email must be 256 characters or fewer.");
+
+        RuleFor(x => x.Code)
+            .NotEmpty().WithMessage("Reset code is required.")
+            .Matches("^[0-9]{6}$").WithMessage("Reset code must be exactly 6 digits.");
 
         RuleFor(x => x.NewPassword)
             .NotEmpty().WithMessage("Password is required.")

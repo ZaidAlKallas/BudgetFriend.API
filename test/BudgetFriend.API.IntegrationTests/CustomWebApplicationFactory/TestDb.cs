@@ -21,7 +21,7 @@ public static class TestDb
 
         await db.Users
             .Where(u => u.Id == userId)
-            .ExecuteUpdateAsync(s => s.SetProperty(u => u.EmailVerificationExpiresAtUtc, DateTime.UtcNow.AddMinutes(-1)));
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.EmailVerificationCodeExpiresAtUtc, DateTime.UtcNow.AddMinutes(-1)));
     }
 
     public static async Task ExpirePasswordResetAsync(BudgetFriendApiFactory factory, Guid userId)
@@ -31,6 +31,6 @@ public static class TestDb
 
         await db.Users
             .Where(u => u.Id == userId)
-            .ExecuteUpdateAsync(s => s.SetProperty(u => u.PasswordResetExpiresAtUtc, DateTime.UtcNow.AddMinutes(-1)));
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.PasswordResetCodeExpiresAtUtc, DateTime.UtcNow.AddMinutes(-1)));
     }
 }
