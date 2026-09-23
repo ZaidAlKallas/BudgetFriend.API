@@ -40,4 +40,31 @@ public sealed class SecurityTokensTests
     {
         SecurityTokens.Hash("token-one").Should().NotBe(SecurityTokens.Hash("token-two"));
     }
+
+    [Fact]
+    public void GenerateNumericCode_ShouldReturnSixDigits_ByDefault()
+    {
+        var code = SecurityTokens.GenerateNumericCode();
+
+        code.Should().MatchRegex("^[0-9]{6}$");
+    }
+
+    [Fact]
+    public void GenerateNumericCode_ShouldSupportCustomLength()
+    {
+        var code = SecurityTokens.GenerateNumericCode(4);
+
+        code.Should().MatchRegex("^[0-9]{4}$");
+    }
+
+    [Fact]
+    public void GenerateNumericCode_ShouldReturnDistinctValues()
+    {
+        var values = Enumerable.Range(0, 100)
+            .Select(_ => SecurityTokens.GenerateNumericCode())
+            .Distinct()
+            .ToList();
+
+        values.Should().HaveCountGreaterThan(20);
+    }
 }

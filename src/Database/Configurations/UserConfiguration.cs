@@ -32,10 +32,13 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(x => x.EmailVerifiedAtUtc);
 
-        builder.Property(x => x.EmailVerificationTokenHash)
+        builder.Property(x => x.EmailVerificationCodeHash)
             .HasMaxLength(256);
 
-        builder.Property(x => x.EmailVerificationExpiresAtUtc);
+        builder.Property(x => x.EmailVerificationCodeExpiresAtUtc);
+
+        builder.Property(x => x.EmailVerificationAttemptCount)
+            .IsRequired();
 
         builder.Property(x => x.PasswordResetTokenHash)
             .HasMaxLength(256);

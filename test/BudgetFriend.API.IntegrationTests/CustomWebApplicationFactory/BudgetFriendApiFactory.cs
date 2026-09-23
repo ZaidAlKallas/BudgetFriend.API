@@ -109,6 +109,13 @@ public sealed class BudgetFriendApiFactory : WebApplicationFactory<Program>, IAs
                     opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     opt.QueueLimit = 0;
                 });
+                options.AddFixedWindowLimiter("VerifyEmailPolicy", opt =>
+                {
+                    opt.PermitLimit = 1000;
+                    opt.Window = TimeSpan.FromMinutes(1);
+                    opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    opt.QueueLimit = 0;
+                });
             });
         });
     }

@@ -15,45 +15,20 @@ public sealed class AuthEmailBuilderTests
         });
 
     [Fact]
-    public void BuildVerificationMessage_ShouldPreferDeepLinkBaseUrl_WhenConfigured()
+    public void BuildVerificationCodeMessage_ShouldContainTheCode()
     {
-        var options = BuildOptions("https://app.test.local");
+        var message = AuthEmailBuilder.BuildVerificationCodeMessage("123456");
 
-        var message = AuthEmailBuilder.BuildVerificationMessage(options, "token-123");
-
-        message.Should().Contain("https://app.test.local/verify-email?token=token-123");
-        message.Should().NotContain("https://web.test.local");
+        message.Should().Contain("<strong>123456</strong>");
     }
 
     [Fact]
-    public void BuildVerificationMessage_ShouldFallBackToBaseUrl_WhenDeepLinkIsNotConfigured()
+    public void BuildVerificationCodeMessage_ShouldNotContainAnyLink()
     {
-        var options = BuildOptions(null);
+        var message = AuthEmailBuilder.BuildVerificationCodeMessage("123456");
 
-        var message = AuthEmailBuilder.BuildVerificationMessage(options, "token-123");
-
-        message.Should().Contain("https://web.test.local/verify-email?token=token-123");
-    }
-
-    [Fact]
-    public void BuildVerificationMessage_ShouldHandleTrailingSlashes_OnDeepLinkBaseUrl()
-    {
-        var options = BuildOptions("https://app.test.local/");
-
-        var message = AuthEmailBuilder.BuildVerificationMessage(options, "token-123");
-
-        message.Should().Contain("https://app.test.local/verify-email?token=token-123");
-        message.Should().NotContain("//verify-email");
-    }
-
-    [Fact]
-    public void BuildVerificationMessage_ShouldUrlEncodeToken()
-    {
-        var options = BuildOptions("https://app.test.local");
-
-        var message = AuthEmailBuilder.BuildVerificationMessage(options, "a b/c+d=");
-
-        message.Should().Contain("https://app.test.local/verify-email?token=a%20b%2Fc%2Bd%3D");
+        message.Should().NotContain("href=");
+        message.Should().NotContain("http");
     }
 
     [Fact]
@@ -65,5 +40,25 @@ public sealed class AuthEmailBuilderTests
 
         message.Should().Contain("https://app.test.local/reset-password?token=reset-token");
         message.Should().NotContain("https://web.test.local");
+    }
+
+    [Fact]
+    public void BuildPasswordResetMessage_ShouldFallBackToBaseUrl_WhenDeepLinkIsNotConfigured()
+    {
+        var options = BuildOptions(null);
+
+        var message = AuthEmailBuilder.BuildPasswordResetMessage(options, "reset-token");
+
+        message.Should().Contain("https://web.test.local/reset-password?token=reset-token");
+    }
+
+    [Fact]
+    public void BuildPasswordResetMessage_ShouldUrlEncodeToken()
+    {
+        var options = BuildOptions("https://app.test.local");
+
+        var message = AuthEmailBuilder.BuildPasswordResetMessage(options, "a b/c+d=");
+
+        message.Should().Contain("https://app.test.local/reset-password?token=a%20b%2Fc%2Bd%3D");
     }
 }

@@ -12,9 +12,11 @@ public sealed class User
 
     public DateTime? EmailVerifiedAtUtc { get; set; }
 
-    public string? EmailVerificationTokenHash { get; set; }
+    public string? EmailVerificationCodeHash { get; set; }
 
-    public DateTime? EmailVerificationExpiresAtUtc { get; set; }
+    public DateTime? EmailVerificationCodeExpiresAtUtc { get; set; }
+
+    public int EmailVerificationAttemptCount { get; set; }
 
     public string? PasswordResetTokenHash { get; set; }
 

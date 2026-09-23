@@ -5,14 +5,12 @@ namespace BudgetFriend.API.Features.Authentication;
 
 internal static class AuthEmailBuilder
 {
-    public static string BuildVerificationMessage(IOptions<EmailOptions> options, string token)
+    public static string BuildVerificationCodeMessage(string code)
     {
-        var link = BuildLink(options, "/verify-email", token);
-
         return $"<p>Welcome to BudgetFriend!</p>" +
-               $"<p>Please verify your email address by clicking the link below:</p>" +
-               $"<p><a href=\"{link}\">Verify Email</a></p>" +
-               "<p>If you did not create an account, you can ignore this email.</p>";
+               $"<p>Your email verification code is:</p>" +
+               $"<p><strong>{code}</strong></p>" +
+               "<p>This code expires in 15 minutes. If you did not create an account, you can ignore this email.</p>";
     }
 
     public static string BuildPasswordResetMessage(IOptions<EmailOptions> options, string token)
